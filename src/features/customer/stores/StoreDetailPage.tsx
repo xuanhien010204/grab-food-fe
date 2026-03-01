@@ -3,7 +3,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { ArrowLeft, MapPin, Star, Heart, Clock, Plus, ShoppingCart } from 'lucide-react';
 import { storeApi, foodStoreApi, favoriteApi, reviewApi } from '../../../api/api';
 import type { StoreDto, FoodStoreDto } from '../../../types/swagger';
-import { Card, CardContent } from '../../../components/ui/Card';
+import { Card } from '../../../components/ui/Card';
 import { Badge } from '../../../components/ui/Badge';
 import { toast } from 'sonner';
 import { Modal } from '../../../components/ui/Modal';

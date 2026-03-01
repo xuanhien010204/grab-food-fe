@@ -1,7 +1,7 @@
 import axios from 'axios';
 import type {
     FoodDto, FoodStoreDto, StoreDto, LoginRequest, RegisterRequest, UserProfileDto,
-    VoucherApplyRequest, DeliveryAddressDto, WalletTransactionDto, PaymentResponse,
+    VoucherApplyRequest, DeliveryAddressDto, PaymentResponse,
     WalletResponse, OrderDto, EditProfileRequest, RegisterManagerRequest,
     FoodStoreCreateRequest, FoodStoreUpdateRequest, VoucherCreateRequest, VoucherUpdateRequest,
     CancelOrderRequest, UpdateOrderStatusRequest, DepositRequest, AddressRequest
@@ -271,7 +271,7 @@ export const notificationApi = {
     getUnreadCount: () => api.get('/api/notifications/unread-count'),
     markRead: (id: string | number) => api.put(`/api/notifications/${id}/read`),
     markAllRead: () => api.put('/api/notifications/read-all'),
-    delete: (id: string) => api.delete(`/api/notifications/${id}`),
+    delete: (id: string | number) => api.delete(`/api/notifications/${id}`),
 };
 
 export const tenantApi = {

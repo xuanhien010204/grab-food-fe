@@ -105,6 +105,7 @@ export interface UserDto {
     roleId: number;
     roleName: string;
     tempCartMeta?: string | null;
+    balance?: number;
 }
 
 // Alias for backward compatibility
@@ -161,6 +162,8 @@ export interface FoodDto {
     foodTypeName?: string;
     imageSrc?: string;
     isAvailable: boolean;
+    price?: number;
+    averageRating?: number;
 }
 
 export interface FoodRequest {

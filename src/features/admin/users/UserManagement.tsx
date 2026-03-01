@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Search, MoreVertical, Lock, Loader2 } from 'lucide-react';
+import { Search, Lock, Loader2 } from 'lucide-react';
 import { adminApi } from '../../../api/api';
 import { toast } from 'sonner';
 

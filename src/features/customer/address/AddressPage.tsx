@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ArrowLeft, MapPin, Plus, Star, Phone, Check, Loader2, Home, Edit2, Trash2, X } from 'lucide-react';
+import { ArrowLeft, MapPin, Plus, Star, Phone, Check, Loader2, Home, Edit2, Trash2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
 import { addressApi } from '../../../api/api';

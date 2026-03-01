@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Edit2, Loader2, MapPin, Phone, Mail, Clock } from 'lucide-react';
+import { Loader2, MapPin, Phone, Clock } from 'lucide-react';
 import { userApi, storeApi } from '../../../api/api';
 import type { StoreDto } from '../../../types/swagger';
 import { toast } from 'sonner';
