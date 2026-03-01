@@ -1,8 +1,8 @@
-import { LogOut, ArrowUp, ArrowDown, Plus as PlusIcon, History, Landmark, Wallet2 } from 'lucide-react';
+import { LogOut, ArrowUp, ArrowDown, Plus as PlusIcon, History, Landmark, Wallet2, RefreshCw } from 'lucide-react';
 import { Button } from '../../../components/ui/Button';
 import { Card } from '../../../components/ui/Card';
 import { Input } from '../../../components/ui/Input';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { cn } from '../../../lib/utils';
@@ -19,15 +19,24 @@ const TransactionTypeName: Record<number, string> = {
     [TransactionType.Bonus]: 'Thưởng',
 };
 
+const TransactionStatusLabel: Record<number, { label: string; color: string }> = {
+    0: { label: 'Đang xử lý', color: 'text-yellow-500' },
+    1: { label: 'Thành công', color: 'text-green-500' },
+    2: { label: 'Thất bại', color: 'text-red-500' },
+    3: { label: 'Đã huỷ', color: 'text-gray-400' },
+};
+
 const isCredit = (type: number) => [TransactionType.Deposit, TransactionType.Refund, TransactionType.Bonus].includes(type);
 
 export default function WalletPage() {
     const navigate = useNavigate();
+    const [searchParams, setSearchParams] = useSearchParams();
     const [amount, setAmount] = useState('');
     const [selectedMethod, setSelectedMethod] = useState('momo');
     const [user, setUser] = useState<UserProfileDto | null>(null);
     const [transactions, setTransactions] = useState<WalletTransactionDto[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [isRefreshing, setIsRefreshing] = useState(false);
 
     useEffect(() => {
         const token = localStorage.getItem('token');
@@ -57,10 +66,44 @@ export default function WalletPage() {
                 console.error("Failed to fetch wallet data", error);
             } finally {
                 setIsLoading(false);
+                setIsRefreshing(false);
             }
         };
         fetchData();
+
+        // Auto-refresh after returning from MoMo payment
+        if (searchParams.get('refreshed') === '1') {
+            setSearchParams({}, { replace: true });
+            const timer = setTimeout(() => {
+                setIsRefreshing(true);
+                fetchData();
+            }, 2000); // wait 2s for IPN to process
+            return () => clearTimeout(timer);
+        }
     }, [navigate]);
+
+    const handleRefresh = async () => {
+        setIsRefreshing(true);
+        try {
+            const [profileRes, balanceRes, transRes] = await Promise.all([
+                userApi.profile(),
+                walletApi.getBalance().catch(() => ({ data: 0 })),
+                walletApi.getTransactions().catch(() => ({ data: [] }))
+            ]);
+            const profileData = profileRes.data as any;
+            const walletData = balanceRes.data as any;
+            const balance = typeof walletData === 'number' ? walletData : (walletData?.balance ?? profileData?.balance ?? 0);
+            setUser({ ...profileData, balance });
+            const rawTrans = transRes.data as any;
+            const transData = Array.isArray(rawTrans) ? rawTrans : Array.isArray(rawTrans?.transactions) ? rawTrans.transactions : [];
+            setTransactions(transData);
+            toast.success('Đã cập nhật');
+        } catch {
+            toast.error('Không thể tải lại');
+        } finally {
+            setIsRefreshing(false);
+        }
+    };
 
     const handleTopUp = async () => {
         if (!amount || isNaN(Number(amount))) return;
@@ -217,11 +260,21 @@ export default function WalletPage() {
                 </section>
 
                 <section>
-                    <div className="flex items-center space-x-2 mb-4">
-                        <div className="w-8 h-8 bg-white shadow-sm border border-gray-100 rounded-lg flex items-center justify-center">
-                            <History className="w-4 h-4 text-orange-600" />
+                    <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center space-x-2">
+                            <div className="w-8 h-8 bg-white shadow-sm border border-gray-100 rounded-lg flex items-center justify-center">
+                                <History className="w-4 h-4 text-orange-600" />
+                            </div>
+                            <h3 className="font-bold text-gray-900">Giao dịch gần đây</h3>
                         </div>
-                        <h3 className="font-bold text-gray-900">Giao dịch gần đây</h3>
+                        <button
+                            onClick={handleRefresh}
+                            disabled={isRefreshing}
+                            className="flex items-center gap-1 text-xs text-orange-500 font-bold hover:text-orange-600 disabled:opacity-50"
+                        >
+                            <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin' : ''}`} />
+                            {isRefreshing ? 'Đang tải...' : 'Làm mới'}
+                        </button>
                     </div>
 
                     <div className="space-y-3">
@@ -233,6 +286,7 @@ export default function WalletPage() {
                         ) : (
                             transactions.slice(0, 10).map((trx) => {
                                 const credit = isCredit(trx.transactionType);
+                                const statusInfo = TransactionStatusLabel[trx.status] ?? { label: trx.statusName || 'Hoàn thành', color: 'text-gray-400' };
                                 return (
                                     <Card key={trx.id} className="p-4 border-none shadow-sm flex items-center justify-between rounded-2xl group hover:shadow-md transition-shadow">
                                         <div className="flex items-center space-x-4">
@@ -255,8 +309,8 @@ export default function WalletPage() {
                                             <span className={cn("font-black text-sm", credit ? "text-emerald-600" : "text-gray-900")}>
                                                 {credit ? '+' : '-'}{(trx.amount || 0).toLocaleString()}đ
                                             </span>
-                                            <p className="text-[8px] text-gray-300 font-bold uppercase tracking-widest mt-0.5">
-                                                {trx.statusName || 'Hoàn thành'}
+                                            <p className={`text-[10px] font-bold uppercase tracking-widest mt-0.5 ${statusInfo.color}`}>
+                                                {statusInfo.label}
                                             </p>
                                         </div>
                                     </Card>

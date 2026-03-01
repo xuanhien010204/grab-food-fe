@@ -113,7 +113,7 @@ export default function PaymentResultPage() {
                 <div className="w-full flex flex-col gap-3">
                     <Button
                         className="w-full rounded-2xl py-4 font-bold shadow-lg shadow-orange-100"
-                        onClick={() => navigate('/wallet')}
+                        onClick={() => navigate('/wallet?refreshed=1')}
                     >
                         <Wallet className="w-4 h-4 mr-2" />
                         Về ví của tôi
