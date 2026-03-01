@@ -263,6 +263,8 @@ export const walletApi = {
     getTransactions: (params?: { pageNumber?: number; pageSize?: number }) =>
         api.get('/api/wallet/transactions', { params }),
     checkBalance: (amount: number) => api.get(`/api/wallet/check-balance/${amount}`),
+    momoReturn: (params: { orderId: string; resultCode: number; message: string }) =>
+        api.get('/api/wallet/momo/return', { params }),
 };
 
 export const notificationApi = {

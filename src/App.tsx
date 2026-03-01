@@ -19,6 +19,7 @@ import AddressPage from './features/customer/address/AddressPage';
 import FavoritesPage from './features/customer/favorites/FavoritesPage';
 import MyReviewsPage from './features/customer/reviews/MyReviewsPage';
 import NotificationsPage from './features/customer/notifications/NotificationsPage';
+import PaymentResultPage from './features/customer/wallet/PaymentResultPage';
 
 // Admin Imports
 import AdminLayout from './features/admin/layout/AdminLayout';
@@ -47,6 +48,7 @@ function App() {
         {/* Auth Routes */}
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
+        <Route path="/payment/result" element={<PaymentResultPage />} />
 
         {/* Customer Routes */}
         <Route path="/" element={<CustomerLayout />}>

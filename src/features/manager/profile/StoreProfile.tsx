@@ -174,8 +174,8 @@ const StoreProfile = () => {
               </div>
             </div>
             <div className={`mt-6 p-4 rounded-xl border flex items-center gap-3 ${store.isOpen
-                ? 'bg-green-100 dark:bg-green-900/20 border-green-200 dark:border-green-800'
-                : 'bg-red-100 dark:bg-red-900/20 border-red-200 dark:border-red-800'
+              ? 'bg-green-100 dark:bg-green-900/20 border-green-200 dark:border-green-800'
+              : 'bg-red-100 dark:bg-red-900/20 border-red-200 dark:border-red-800'
               }`}>
               <span>{store.isOpen ? '✓' : '✕'}</span>
               <div>
