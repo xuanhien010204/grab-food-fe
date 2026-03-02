@@ -3,7 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { userApi, walletApi } from '../../../api/api';
 import { authStorage } from '../../../utils/auth';
 import type { UserProfileDto } from '../../../types/swagger';
-import { LogOut, User, Mail, Shield, Wallet, Loader2, Edit2, X, Phone, MapPin, Heart, Bell, ClipboardList, ChevronRight } from 'lucide-react';
+import { LogOut, User, Mail, Shield, Wallet, Loader2, Edit2, X, Phone, MapPin, Heart, Bell, ClipboardList, ChevronRight, Store, Clock } from 'lucide-react';
 import { toast } from 'sonner';
 
 export function CustomerProfile() {
@@ -15,6 +15,7 @@ export function CustomerProfile() {
     const [isEditing, setIsEditing] = useState(false);
     const [editForm, setEditForm] = useState({ name: '', email: '', phone: '' });
     const [isSaving, setIsSaving] = useState(false);
+    const [showRoleChangePopup, setShowRoleChangePopup] = useState(false);
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -37,6 +38,12 @@ export function CustomerProfile() {
 
             if (data && (data.id || data.email || data.name)) {
                 setProfile(data as UserProfileDto);
+                // M05: Detect role change - if server role differs from stored role, prompt re-login
+                const storedRole = authStorage.getRole();
+                const serverRole = data.roleName;
+                if (storedRole && serverRole && storedRole !== serverRole) {
+                    setShowRoleChangePopup(true);
+                }
             } else {
                 setError('Dữ liệu trả về không đúng định dạng.');
             }
@@ -98,19 +105,29 @@ export function CustomerProfile() {
 
     if (error) {
         return (
-            <div className="flex items-center justify-center min-h-[60vh] p-6">
+            <div className="flex flex-col items-center justify-center min-h-[60vh] p-6">
                 <div className="bg-white rounded-2xl shadow-sm p-8 text-center max-w-sm w-full">
                     <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
                         <User className="w-8 h-8 text-red-500" />
                     </div>
                     <h2 className="text-lg font-bold text-gray-800 mb-2">Lỗi</h2>
                     <p className="text-gray-500 text-sm mb-6">{error}</p>
-                    <button
-                        onClick={fetchProfile}
-                        className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-2.5 rounded-xl text-sm font-semibold transition-colors"
-                    >
-                        Thử lại
-                    </button>
+                    <div className="space-y-3">
+                        <button
+                            onClick={fetchProfile}
+                            className="w-full bg-orange-500 hover:bg-orange-600 text-white px-6 py-2.5 rounded-xl text-sm font-semibold transition-colors"
+                        >
+                            Thử lại
+                        </button>
+                        <button
+                            onClick={handleSignOut}
+                            disabled={signingOut}
+                            className="w-full flex items-center justify-center gap-2 bg-red-50 hover:bg-red-100 text-red-600 font-semibold py-2.5 rounded-xl transition-colors disabled:opacity-50"
+                        >
+                            {signingOut ? <Loader2 className="w-4 h-4 animate-spin" /> : <LogOut className="w-4 h-4" />}
+                            {signingOut ? 'Đang đăng xuất...' : 'Đăng xuất'}
+                        </button>
+                    </div>
                 </div>
             </div>
         );
@@ -138,7 +155,14 @@ export function CustomerProfile() {
                     </div>
                     <div>
                         <h2 className="text-lg font-bold">{profile?.name || 'N/A'}</h2>
-                        <p className="text-orange-100 text-sm">{profile?.roleName || 'Customer'}</p>
+                        <p className="text-orange-100 text-sm">{profile?.roleName === 'User' ? 'Khách hàng' : profile?.roleName || 'Khách hàng'}</p>
+                        {/* M04: Pending approval badge */}
+                        {profile?.roleName === 'User' && (profile as any)?.pendingManagerRegistration && (
+                            <span className="inline-flex items-center gap-1 mt-1 px-2 py-0.5 bg-yellow-400/20 text-yellow-100 text-[10px] font-bold rounded-full">
+                                <Clock className="w-3 h-3" />
+                                Đang chờ duyệt đối tác
+                            </span>
+                        )}
                     </div>
                 </div>
             </div>
@@ -161,7 +185,7 @@ export function CustomerProfile() {
                     </div>
                     <div>
                         <p className="text-xs text-gray-400 font-medium">Vai trò</p>
-                        <p className="text-sm font-semibold text-gray-800">{profile?.roleName || 'Customer'}</p>
+                        <p className="text-sm font-semibold text-gray-800">{profile?.roleName === 'User' ? 'Khách hàng' : profile?.roleName || 'Khách hàng'}</p>
                     </div>
                 </div>
 
@@ -184,6 +208,10 @@ export function CustomerProfile() {
                     { icon: MapPin, label: 'Địa chỉ giao hàng', sub: 'Quản lý địa chỉ', to: '/addresses', color: 'text-orange-500', bg: 'bg-orange-50' },
                     { icon: Heart, label: 'Yêu thích', sub: 'Quán và món yêu thích', to: '/favorites', color: 'text-red-500', bg: 'bg-red-50' },
                     { icon: Bell, label: 'Thông báo', sub: 'Xem tất cả thông báo', to: '/notifications', color: 'text-purple-500', bg: 'bg-purple-50' },
+                    // M01: Register Store link - only show for User (Customer) role
+                    ...((!profile?.roleName || profile?.roleName === 'User') ? [
+                        { icon: Store, label: 'Đăng ký trở thành đối tác', sub: 'Mở quán trên nền tảng', to: '/register-store', color: 'text-amber-500', bg: 'bg-amber-50' },
+                    ] : []),
                 ].map(({ icon: Icon, label, sub, to, color, bg }, idx, arr) => (
                     <Link
                         key={to}
@@ -215,7 +243,6 @@ export function CustomerProfile() {
                 )}
                 {signingOut ? 'Đang đăng xuất...' : 'Đăng xuất'}
             </button>
-
             {/* Edit Profile Modal */}
             {isEditing && (
                 <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
@@ -274,6 +301,31 @@ export function CustomerProfile() {
                                 {isSaving ? 'Đang lưu...' : 'Lưu'}
                             </button>
                         </div>
+                    </div>
+                </div>
+            )}
+
+            {/* M05: Role Change Popup */}
+            {showRoleChangePopup && (
+                <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+                    <div className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-sm text-center space-y-4">
+                        <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto">
+                            <Shield className="w-8 h-8 text-orange-500" />
+                        </div>
+                        <h2 className="text-lg font-bold text-gray-900">Vai trò đã thay đổi!</h2>
+                        <p className="text-sm text-gray-500">
+                            Tài khoản của bạn đã được nâng cấp vai trò. Vui lòng đăng nhập lại để sử dụng quyền mới.
+                        </p>
+                        <button
+                            onClick={() => {
+                                authStorage.clear();
+                                localStorage.removeItem('bypass_user');
+                                navigate('/login', { replace: true });
+                            }}
+                            className="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 rounded-xl transition-colors"
+                        >
+                            Đăng nhập lại
+                        </button>
                     </div>
                 </div>
             )}

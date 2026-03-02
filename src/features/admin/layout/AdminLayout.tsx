@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Outlet, Link, useLocation } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard,
   Users,
@@ -11,20 +11,42 @@ import {
   Search,
   Bell,
   Settings2,
-  Ticket
+  Ticket,
+  LogOut
 } from 'lucide-react';
 import { cn } from '../../../lib/utils';
+import { authStorage } from '../../../utils/auth';
+import { userApi, adminApi } from '../../../api/api';
 
 export default function AdminLayout() {
   const [isSidebarOpen, setSidebarOpen] = useState(true);
+  const [pendingStoreCount, setPendingStoreCount] = useState(0);
   const location = useLocation();
+  const navigate = useNavigate();
 
   const isActive = (path: string) => location.pathname === path;
+
+  // B04: Fetch pending store count for badge
+  useEffect(() => {
+    adminApi.getPendingStores()
+      .then(res => {
+        const data = Array.isArray(res.data) ? res.data : [];
+        setPendingStoreCount(data.length);
+      })
+      .catch(() => { });
+  }, [location.pathname]);
+
+  const handleLogout = async () => {
+    try { await userApi.signOut(); } catch { }
+    authStorage.clear();
+    localStorage.removeItem('bypass_user');
+    navigate('/login', { replace: true });
+  };
 
   const MENU_ITEMS = [
     { name: 'Dashboard', path: '/admin/dashboard', icon: LayoutDashboard },
     { name: 'User Management', path: '/admin/users', icon: Users },
-    { name: 'Store Management', path: '/admin/stores', icon: Store },
+    { name: 'Store Management', path: '/admin/stores', icon: Store, badge: pendingStoreCount },
     { name: 'Category Management', path: '/admin/categories', icon: Tag },
     { name: 'Voucher Management', path: '/admin/vouchers', icon: Ticket },
     { name: 'Transactions', path: '/admin/transactions', icon: Receipt },
@@ -58,7 +80,7 @@ export default function AdminLayout() {
                   key={item.path}
                   to={item.path}
                   className={cn(
-                    "flex items-center gap-3 px-4 py-3 rounded-lg transition-colors",
+                    "flex items-center gap-3 px-4 py-3 rounded-lg transition-colors relative",
                     isActive(item.path)
                       ? "bg-orange-600 text-white"
                       : "text-gray-400 hover:bg-white/10 hover:text-white"
@@ -66,6 +88,11 @@ export default function AdminLayout() {
                 >
                   <Icon className="w-5 h-5" />
                   <span className="text-sm font-medium">{item.name}</span>
+                  {(item as any).badge > 0 && (
+                    <span className="ml-auto bg-red-500 text-white text-[10px] font-bold rounded-full min-w-[20px] h-5 flex items-center justify-center px-1">
+                      {(item as any).badge}
+                    </span>
+                  )}
                 </Link>
               );
             })}
@@ -73,15 +100,22 @@ export default function AdminLayout() {
         </div>
 
         <div className="mt-auto p-6 border-t border-white/10">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 mb-4">
             <div className="size-10 rounded-full bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center text-white font-bold">
               AD
             </div>
             <div>
-              <p className="text-sm font-semibold">Alex Thompson</p>
+              <p className="text-sm font-semibold">Admin</p>
               <p className="text-xs text-gray-400">Super Admin</p>
             </div>
           </div>
+          <button
+            onClick={handleLogout}
+            className="w-full flex items-center gap-2 px-4 py-2.5 text-red-400 hover:bg-red-500/10 hover:text-red-300 rounded-lg font-semibold text-sm transition-colors"
+          >
+            <LogOut className="w-4 h-4" />
+            Đăng xuất
+          </button>
         </div>
       </aside>
 

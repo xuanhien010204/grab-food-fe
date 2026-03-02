@@ -126,20 +126,52 @@ export const cartStore = {
         userApi.clearCart().catch(() => { });
     },
 
-    /** Try to load cart from API (for initial sync on login) */
+    /** Try to load cart from API and merge with local cart (B02) */
     async syncFromApi() {
         try {
             const res = await userApi.getCart();
             const d = res.data as any;
-            const apiOrderList = d?.orderList || d?.OrderList || {};
-            const entries = Object.entries(apiOrderList);
-            if (entries.length > 0) {
-                // API has data → merge into local storage (API wins if local is empty)
-                const localOrderList = read();
-                if (Object.keys(localOrderList).length === 0) {
-                    write(apiOrderList);
+            const apiOrderList: CartOrderList = d?.orderList || d?.OrderList || {};
+            const localOrderList = read();
+
+            const localHasItems = Object.keys(localOrderList).length > 0;
+            const apiHasItems = Object.keys(apiOrderList).length > 0;
+
+            if (!localHasItems && apiHasItems) {
+                // Local is empty, use API cart
+                write(apiOrderList);
+            } else if (localHasItems && apiHasItems) {
+                // Both have items — merge (local items added to API items, local quantity wins for duplicates)
+                // Check if they're from the same store
+                const localStoreId = Object.values(localOrderList)[0]?.foodStore?.storeId || Object.values(localOrderList)[0]?.foodStore?.StoreId;
+                const apiStoreId = Object.values(apiOrderList)[0]?.foodStore?.storeId || Object.values(apiOrderList)[0]?.foodStore?.StoreId;
+
+                if (localStoreId && apiStoreId && localStoreId !== apiStoreId) {
+                    // Different stores — keep local cart (user's most recent action)
+                    syncToApi(localOrderList);
+                } else {
+                    // Same store or unknown — merge quantities
+                    const merged: CartOrderList = { ...apiOrderList };
+                    for (const [key, localEntry] of Object.entries(localOrderList)) {
+                        if (merged[key]) {
+                            // Item exists in both — sum quantities
+                            merged[key] = {
+                                quantity: merged[key].quantity + localEntry.quantity,
+                                foodStore: localEntry.foodStore || merged[key].foodStore,
+                            };
+                        } else {
+                            // Item only in local — add it
+                            merged[key] = localEntry;
+                        }
+                    }
+                    write(merged);
+                    syncToApi(merged);
                 }
+            } else if (localHasItems && !apiHasItems) {
+                // API is empty, sync local to API
+                syncToApi(localOrderList);
             }
+            // Both empty — nothing to do
         } catch {
             // API unavailable — local storage is the source of truth
         }

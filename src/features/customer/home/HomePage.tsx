@@ -1,4 +1,4 @@
-import { Search, MapPin, Star, Heart, Clock, ShoppingBag, X } from 'lucide-react';
+import { Search, MapPin, Star, Heart, Clock, ShoppingBag, X, ChevronRight, Utensils } from 'lucide-react';
 import { Input } from '../../../components/ui/Input';
 import { Card, CardContent } from '../../../components/ui/Card';
 import { Badge } from '../../../components/ui/Badge';
@@ -17,6 +17,7 @@ const PROMOTIONS = [
 
 export default function HomePage() {
     const [activeCategory, setActiveCategory] = useState<number>(1);
+    const userRole = localStorage.getItem('roleName') || '';
     const [currentBanner, setCurrentBanner] = useState(0);
     const [isLoading, setIsLoading] = useState(true);
     const [categories, setCategories] = useState<{ id: number, name: string }[]>([]);
@@ -290,6 +291,31 @@ export default function HomePage() {
                         ))}
                     </div>
                 </div>
+
+                {/* BECOME A PARTNER CTA */}
+                {(!userRole || userRole === 'User') && (
+                    <Link to="/register-store" className="block group">
+                        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-amber-500 via-orange-500 to-red-500 p-5 shadow-lg shadow-orange-200">
+                            {/* Decorative blobs */}
+                            <div className="absolute -top-6 -right-6 w-32 h-32 rounded-full bg-white/10" />
+                            <div className="absolute -bottom-4 -left-4 w-24 h-24 rounded-full bg-white/10" />
+
+                            <div className="relative flex items-center gap-4">
+                                <div className="w-14 h-14 bg-white/20 backdrop-blur rounded-2xl flex items-center justify-center shrink-0 shadow-inner">
+                                    <Utensils className="w-7 h-7 text-white" />
+                                </div>
+                                <div className="flex-1">
+                                    <p className="text-white/80 text-[11px] font-semibold uppercase tracking-widest mb-0.5">Bạn có nhà hàng?</p>
+                                    <h3 className="text-white text-base font-black leading-tight">Đăng ký trở thành đối tác</h3>
+                                    <p className="text-white/70 text-xs mt-0.5">Kiếm thêm thu nhập, quản lý đơn hàng dễ dàng</p>
+                                </div>
+                                <div className="w-9 h-9 bg-white/20 rounded-xl flex items-center justify-center shrink-0 group-hover:bg-white/30 transition-colors">
+                                    <ChevronRight className="w-5 h-5 text-white" />
+                                </div>
+                            </div>
+                        </div>
+                    </Link>
+                )}
             </div>
         </div>
     );

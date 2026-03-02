@@ -7,7 +7,7 @@ const normalizeRole = (role?: string | null): RoleName => {
   // hỗ trợ nhiều kiểu backend hay trả
   if (r.includes('admin')) return 'Admin';
   if (r.includes('manager') || r.includes('store') || r.includes('tenant')) return 'Manager';
-  return 'Customer';
+  return 'User';
 };
 
 export const getHomeByRole = (role?: string | null): string => {

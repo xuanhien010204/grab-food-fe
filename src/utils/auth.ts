@@ -1,4 +1,4 @@
-export type RoleName = 'Admin' | 'Manager' | 'Customer';
+export type RoleName = 'Admin' | 'Manager' | 'User';
 
 const TOKEN_KEY = 'token';
 const ROLE_KEY = 'roleName';
