@@ -7,6 +7,7 @@ import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { cn } from '../../../lib/utils';
 import { userApi, walletApi } from '../../../api/api';
+import { authStorage } from '../../../utils/auth';
 import type { UserProfileDto, WalletTransactionDto } from '../../../types/swagger';
 import { TransactionType } from '../../../types/swagger';
 import { Badge } from '../../../components/ui/Badge';
@@ -71,14 +72,50 @@ export default function WalletPage() {
         };
         fetchData();
 
-        // Auto-refresh after returning from MoMo payment
+        // B03: Polling after returning from MoMo payment instead of fixed 2s wait
         if (searchParams.get('refreshed') === '1') {
             setSearchParams({}, { replace: true });
-            const timer = setTimeout(() => {
-                setIsRefreshing(true);
-                fetchData();
-            }, 2000); // wait 2s for IPN to process
-            return () => clearTimeout(timer);
+            setIsRefreshing(true);
+
+            // Poll balance every 2s for up to 30s to detect IPN update
+            let pollCount = 0;
+            const maxPolls = 15;
+            const initialBalance = user?.balance;
+
+            const pollInterval = setInterval(async () => {
+                pollCount++;
+                try {
+                    const [balanceRes, transRes] = await Promise.all([
+                        walletApi.getBalance().catch(() => ({ data: 0 })),
+                        walletApi.getTransactions().catch(() => ({ data: [] }))
+                    ]);
+                    const walletData = balanceRes.data as any;
+                    const newBalance = typeof walletData === 'number' ? walletData : (walletData?.balance ?? 0);
+
+                    const rawTrans = transRes.data as any;
+                    const transData = Array.isArray(rawTrans) ? rawTrans : Array.isArray(rawTrans?.transactions) ? rawTrans.transactions : [];
+                    setTransactions(transData);
+
+                    // Balance changed or max polls reached → stop polling
+                    if (newBalance !== initialBalance || pollCount >= maxPolls) {
+                        clearInterval(pollInterval);
+                        setUser(prev => prev ? { ...prev, balance: newBalance } : prev);
+                        setIsRefreshing(false);
+                        if (newBalance !== initialBalance) {
+                            toast.success('Số dư đã được cập nhật!');
+                        }
+                    }
+                } catch {
+                    // Continue polling on error
+                }
+
+                if (pollCount >= maxPolls) {
+                    clearInterval(pollInterval);
+                    setIsRefreshing(false);
+                }
+            }, 2000);
+
+            return () => clearInterval(pollInterval);
         }
     }, [navigate]);
 
@@ -131,8 +168,10 @@ export default function WalletPage() {
     };
 
     const handleLogout = async () => {
-        localStorage.removeItem('token');
-        navigate('/login');
+        try { await userApi.signOut(); } catch { }
+        authStorage.clear();
+        localStorage.removeItem('bypass_user');
+        navigate('/login', { replace: true });
     };
 
     if (isLoading) {

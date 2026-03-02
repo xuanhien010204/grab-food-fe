@@ -20,6 +20,7 @@ import FavoritesPage from './features/customer/favorites/FavoritesPage';
 import MyReviewsPage from './features/customer/reviews/MyReviewsPage';
 import NotificationsPage from './features/customer/notifications/NotificationsPage';
 import PaymentResultPage from './features/customer/wallet/PaymentResultPage';
+import ManagerRegistrationPage from './features/customer/pages/ManagerRegistrationPage';
 
 // Admin Imports
 import AdminLayout from './features/admin/layout/AdminLayout';
@@ -67,6 +68,7 @@ function App() {
           <Route path="favorites" element={<FavoritesPage />} />
           <Route path="reviews" element={<MyReviewsPage />} />
           <Route path="notifications" element={<NotificationsPage />} />
+          <Route path="register-store" element={<ManagerRegistrationPage />} />
         </Route>
 
         {/* Admin Routes */}

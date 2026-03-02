@@ -5,6 +5,44 @@ import { VoucherType, VoucherTypeName } from '../../../types/swagger';
 import type { VoucherDto } from '../../../types/swagger';
 import { toast } from 'sonner';
 
+/**
+ * B01: Convert a date string (YYYY-MM-DD) to ISO string in Vietnam timezone (UTC+7).
+ * This ensures vouchers don't expire 7 hours early when backend stores UTC.
+ * For endDate, we set it to end-of-day (23:59:59) in VN time.
+ */
+function toVietnamISOString(dateStr: string, endOfDay = false): string {
+    if (!dateStr) return '';
+    const [year, month, day] = dateStr.split('-').map(Number);
+    // Create date as VN time by subtracting 7 hours offset
+    const hours = endOfDay ? 23 : 0;
+    const minutes = endOfDay ? 59 : 0;
+    const seconds = endOfDay ? 59 : 0;
+    // VN is UTC+7, so we subtract 7 hours to get UTC equivalent
+    const vnDate = new Date(Date.UTC(year, month - 1, day, hours - 7, minutes, seconds));
+    return vnDate.toISOString();
+}
+
+/** Convert UTC date string to VN date display */
+function toVietnamDateString(utcDateStr: string): string {
+    if (!utcDateStr) return '-';
+    const date = new Date(utcDateStr);
+    return date.toLocaleDateString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' });
+}
+
+/** Convert UTC date to YYYY-MM-DD for input[type=date] in VN timezone */
+function toVietnamInputDate(utcDateStr: string): string {
+    if (!utcDateStr) return '';
+    const date = new Date(utcDateStr);
+    // Format in VN timezone
+    const vnFormatter = new Intl.DateTimeFormat('en-CA', {
+        timeZone: 'Asia/Ho_Chi_Minh',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+    });
+    return vnFormatter.format(date); // Returns YYYY-MM-DD format
+}
+
 const defaultForm = {
     code: '',
     name: '',
@@ -56,8 +94,8 @@ export default function VoucherManagement() {
             value: v.value || 0,
             minOrderAmount: v.minOrderAmount || 0,
             maxDiscount: v.maxDiscount || 0,
-            startDate: v.startDate ? v.startDate.split('T')[0] : '',
-            endDate: v.endDate ? v.endDate.split('T')[0] : '',
+            startDate: v.startDate ? toVietnamInputDate(v.startDate) : '',
+            endDate: v.endDate ? toVietnamInputDate(v.endDate) : '',
             usageLimit: v.usageLimit || 100,
             usageLimitPerUser: v.usageLimitPerUser || 1,
             storeId: v.storeId || null,
@@ -74,7 +112,7 @@ export default function VoucherManagement() {
                     description: form.description,
                     minOrderAmount: form.minOrderAmount,
                     maxDiscount: form.maxDiscount,
-                    endDate: new Date(form.endDate).toISOString(),
+                    endDate: toVietnamISOString(form.endDate, true),
                     usageLimit: form.usageLimit,
                     usageLimitPerUser: form.usageLimitPerUser,
                     isActive: form.isActive,
@@ -89,8 +127,8 @@ export default function VoucherManagement() {
                     value: form.value,
                     minOrderAmount: form.minOrderAmount,
                     maxDiscount: form.maxDiscount,
-                    startDate: new Date(form.startDate).toISOString(),
-                    endDate: new Date(form.endDate).toISOString(),
+                    startDate: toVietnamISOString(form.startDate),
+                    endDate: toVietnamISOString(form.endDate, true),
                     usageLimit: form.usageLimit,
                     usageLimitPerUser: form.usageLimitPerUser,
                     storeId: form.storeId,
@@ -176,7 +214,7 @@ export default function VoucherManagement() {
                                     </div>
                                     <div className="flex items-center gap-1 text-xs text-gray-400 mt-2">
                                         <Calendar className="w-3 h-3" />
-                                        {new Date(v.startDate).toLocaleDateString('vi-VN')} - {new Date(v.endDate).toLocaleDateString('vi-VN')}
+                                        {toVietnamDateString(v.startDate)} - {toVietnamDateString(v.endDate)}
                                     </div>
                                     <p className="text-xs text-gray-400 mt-1">
                                         Đã dùng: {v.usedCount}/{v.usageLimit} | /user: {v.usageLimitPerUser}

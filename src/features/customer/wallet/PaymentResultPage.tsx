@@ -22,7 +22,7 @@ export default function PaymentResultPage() {
     useEffect(() => {
         // Notify backend to confirm the transaction
         if (orderId && resultCode) {
-            walletApi.momoReturn({ orderId, resultCode: Number(resultCode), message: message || '' })
+            walletApi.momoReturn({ orderId, resultCode: Number(resultCode), message: message || '', amount: Number(amount || 0) })
                 .catch(() => { /* backend may have already processed via IPN */ })
                 .finally(() => {
                     setVerified(true);
