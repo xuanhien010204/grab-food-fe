@@ -126,20 +126,26 @@ export const cartStore = {
         userApi.clearCart().catch(() => { });
     },
 
-    /** Try to load cart from API (for initial sync on login) */
+    /** Try to load cart from API and merge with local cart (B02) */
     async syncFromApi() {
         try {
             const res = await userApi.getCart();
             const d = res.data as any;
-            const apiOrderList = d?.orderList || d?.OrderList || {};
-            const entries = Object.entries(apiOrderList);
-            if (entries.length > 0) {
-                // API has data → merge into local storage (API wins if local is empty)
-                const localOrderList = read();
-                if (Object.keys(localOrderList).length === 0) {
-                    write(apiOrderList);
-                }
+            const apiOrderList: CartOrderList = d?.orderList || d?.OrderList || {};
+            const localOrderList = read();
+
+            const localHasItems = Object.keys(localOrderList).length > 0;
+            const apiHasItems = Object.keys(apiOrderList).length > 0;
+
+            if (!localHasItems && apiHasItems) {
+                // Local is empty — load from API (e.g. first login on new device)
+                write(apiOrderList);
+            } else if (localHasItems) {
+                // Local has items — local is always source of truth.
+                // Just ensure API is in sync with local; never sum quantities.
+                syncToApi(localOrderList);
             }
+            // Both empty — nothing to do
         } catch {
             // API unavailable — local storage is the source of truth
         }

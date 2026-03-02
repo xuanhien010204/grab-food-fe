@@ -1,6 +1,8 @@
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
-import { BarChart3, ClipboardList, Store, LogOut, Search, Bell, User, Menu, MessageSquare, Building2 } from 'lucide-react';
+import { BarChart3, ClipboardList, Store, LogOut, Search, Bell, User, Menu, MessageSquare, Building2, TrendingUp, Ticket } from 'lucide-react';
 import { useState } from 'react';
+import { authStorage } from '../../../utils/auth';
+import { userApi } from '../../../api/api';
 
 const ManagerLayout = () => {
   const location = useLocation();
@@ -13,6 +15,8 @@ const ManagerLayout = () => {
     { label: 'Dashboard', icon: BarChart3, path: '/manager' },
     { label: 'Orders', icon: ClipboardList, path: '/manager/orders' },
     { label: 'Menu', icon: ClipboardList, path: '/manager/menu' },
+    { label: 'Revenue', icon: TrendingUp, path: '/manager/analytics' },
+    { label: 'Vouchers', icon: Ticket, path: '/manager/vouchers' },
     { label: 'Reviews', icon: MessageSquare, path: '/manager/reviews' },
     { label: 'Tenants', icon: Building2, path: '/manager/tenants' },
     { label: 'Store Profile', icon: Store, path: '/manager/store' }
@@ -62,7 +66,12 @@ const ManagerLayout = () => {
               <User className="w-5 h-5 text-gray-700 dark:text-gray-300" />
             </button>
             <button
-              onClick={() => navigate('/login')}
+              onClick={async () => {
+                try { await userApi.signOut(); } catch { }
+                authStorage.clear();
+                localStorage.removeItem('bypass_user');
+                navigate('/login', { replace: true });
+              }}
               className="flex items-center gap-2 px-4 py-2 text-orange-600 dark:text-orange-500 hover:bg-orange-50 dark:hover:bg-orange-500/10 rounded-lg font-bold text-sm"
             >
               <LogOut className="w-4 h-4" />
@@ -84,8 +93,8 @@ const ManagerLayout = () => {
                   key={item.path}
                   to={item.path}
                   className={`flex items-center gap-3 px-4 py-3 rounded-xl font-bold transition-all ${isActive(item.path)
-                      ? 'bg-orange-600 text-white shadow-lg'
-                      : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
+                    ? 'bg-orange-600 text-white shadow-lg'
+                    : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
                     }`}
                 >
                   <Icon className="w-5 h-5" />
@@ -125,8 +134,8 @@ const ManagerLayout = () => {
                       to={item.path}
                       onClick={() => setIsMobileMenuOpen(false)}
                       className={`flex items-center gap-3 px-4 py-3 rounded-xl font-bold transition-all ${isActive(item.path)
-                          ? 'bg-orange-600 text-white shadow-lg'
-                          : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
+                        ? 'bg-orange-600 text-white shadow-lg'
+                        : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
                         }`}
                     >
                       <Icon className="w-5 h-5" />

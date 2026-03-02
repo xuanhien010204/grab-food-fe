@@ -11,8 +11,8 @@ const STATUS_STEPS = [
     { label: 'Chờ xử lý', icon: Clock },
     { label: 'Đã xác nhận', icon: CheckCircle2 },
     { label: 'Đang chuẩn bị', icon: Store },
+    { label: 'Sẵn sàng', icon: Package2 },
     { label: 'Đang giao', icon: Package2 },
-    { label: 'Đã giao', icon: CheckCircle2 },
     { label: 'Hoàn thành', icon: CheckCircle2 }
 ];
 
@@ -29,6 +29,7 @@ export default function OrderDetailPage() {
     const [reviewRating, setReviewRating] = useState(5);
     const [reviewComment, setReviewComment] = useState('');
     const [isSubmittingReview, setIsSubmittingReview] = useState(false);
+    const [isConfirmingReceived, setIsConfirmingReceived] = useState(false);
 
     const fetchOrder = async () => {
         if (!id) return;
@@ -103,7 +104,22 @@ export default function OrderDetailPage() {
 
     const currentStatus = order.status || 0;
     const canCancel = currentStatus === 0; // Only pending orders can be cancelled
+    const canConfirmReceived = currentStatus === 4; // Delivering -> user confirms received
     const isCancelled = currentStatus === 6;
+
+    const handleConfirmReceived = async () => {
+        if (!id) return;
+        try {
+            setIsConfirmingReceived(true);
+            await orderApi.updateStatus(id, { status: 5 }); // 5 = Completed
+            toast.success('Xác nhận đã nhận hàng thành công! 🎉');
+            await fetchOrder();
+        } catch (err: any) {
+            toast.error(err.response?.data?.message || 'Không thể xác nhận nhận hàng');
+        } finally {
+            setIsConfirmingReceived(false);
+        }
+    };
 
     return (
         <div className="bg-gray-50 min-h-screen pb-52">
@@ -318,6 +334,19 @@ export default function OrderDetailPage() {
                             HUỶ ĐƠN
                         </Button>
                     )}
+                    {canConfirmReceived && (
+                        <Button
+                            className="py-4 rounded-2xl font-bold bg-green-600 hover:bg-green-700 text-white shadow-lg shadow-green-100 text-sm col-span-2"
+                            onClick={handleConfirmReceived}
+                            disabled={isConfirmingReceived}
+                        >
+                            {isConfirmingReceived ? (
+                                <><Loader2 className="w-4 h-4 animate-spin mr-2" /> Đang xác nhận...</>
+                            ) : (
+                                '✅ ĐÃ NHẬN HÀNG'
+                            )}
+                        </Button>
+                    )}
                     {canReviewOrder && (
                         <Button
                             variant="outline"
@@ -328,7 +357,7 @@ export default function OrderDetailPage() {
                         </Button>
                     )}
                     <Button
-                        className={`py-4 rounded-2xl font-bold shadow-lg shadow-orange-100 text-sm ${!canCancel && !canReviewOrder ? 'col-span-2' : ''}`}
+                        className={`py-4 rounded-2xl font-bold shadow-lg shadow-orange-100 text-sm ${!canCancel && !canReviewOrder && !canConfirmReceived ? 'col-span-2' : ''}`}
                         onClick={() => navigate('/')}
                     >
                         ĐẶT LẠI

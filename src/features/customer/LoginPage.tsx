@@ -7,6 +7,7 @@ import { toast } from 'sonner';
 import { userApi } from '../../api/api';
 import { authStorage, type RoleName } from '../../utils/auth';
 import { getHomeByRole } from '../../utils/roleRedirect';
+import { cartStore } from '../../utils/cartStore';
 
 
 export default function LoginPage() {
@@ -26,7 +27,7 @@ export default function LoginPage() {
                 const tokenUser = authStorage.getUserFromToken();
                 let roleName = tokenUser?.role || tokenUser?.Role || tokenUser?.['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'] || profile.data.roleName;
 
-                const role = (roleName || 'Customer') as RoleName;
+                const role = (roleName || 'User') as RoleName;
                 authStorage.setRole(role);
                 navigate(getHomeByRole(role), { replace: true });
             } catch {
@@ -52,8 +53,11 @@ export default function LoginPage() {
                 || loginRes.data?.roleName
                 || profile.data.roleName;
 
-            const role = (roleName || 'Customer') as RoleName;
+            const role = (roleName || 'User') as RoleName;
             authStorage.setRole(role);
+
+            // B02: Merge local cart with server cart after login
+            await cartStore.syncFromApi();
 
             toast.success('Đăng nhập thành công');
             navigate(getHomeByRole(role), { replace: true });
@@ -62,11 +66,34 @@ export default function LoginPage() {
             console.error('Error Response:', error.response);
             console.error('Error Response Data:', error.response?.data);
 
-            const msg =
-                error.response?.data?.message ||
-                error.response?.data?.Message ||
-                error.message ||
-                'Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin.';
+            // A04: Show specific error messages based on HTTP status code
+            const status = error.response?.status;
+            const serverMsg = error.response?.data?.message || error.response?.data?.Message || '';
+            let msg: string;
+
+            if (status === 400) {
+                // Validation errors
+                const errors = error.response?.data?.errors;
+                if (errors && typeof errors === 'object') {
+                    const messages = Object.values(errors).flat().join('. ');
+                    msg = messages || 'Thông tin đăng nhập không hợp lệ. Vui lòng kiểm tra email và mật khẩu.';
+                } else {
+                    msg = serverMsg || 'Thông tin đăng nhập không hợp lệ. Vui lòng kiểm tra email và mật khẩu.';
+                }
+            } else if (status === 401) {
+                msg = serverMsg || 'Email hoặc mật khẩu không đúng. Vui lòng thử lại.';
+            } else if (status === 403) {
+                msg = serverMsg || 'Tài khoản của bạn đã bị khoá. Vui lòng liên hệ Admin.';
+            } else if (status === 404) {
+                msg = 'Tài khoản không tồn tại. Vui lòng kiểm tra lại email.';
+            } else if (status === 429) {
+                msg = 'Bạn đã thử đăng nhập quá nhiều lần. Vui lòng thử lại sau.';
+            } else if (status && status >= 500) {
+                msg = 'Lỗi hệ thống. Vui lòng thử lại sau ít phút.';
+            } else {
+                msg = serverMsg || error.message || 'Đăng nhập thất bại. Vui lòng kiểm tra kết nối mạng.';
+            }
+
             toast.error(msg);
         } finally {
             setIsLoading(false);

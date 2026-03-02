@@ -6,11 +6,13 @@ import { OrderStatus, OrderStatusName } from '../../../types/swagger';
 import { toast } from 'sonner';
 
 const TAB_STATUS: { id: string; status: number; label: string }[] = [
-  { id: 'Pending', status: OrderStatus.Pending, label: 'Pending' },
-  { id: 'Confirmed', status: OrderStatus.Confirmed, label: 'Confirmed' },
-  { id: 'Preparing', status: OrderStatus.Preparing, label: 'Preparing' },
-  { id: 'Ready', status: OrderStatus.Ready, label: 'Ready' },
-  { id: 'Delivering', status: OrderStatus.Delivering, label: 'Delivering' },
+  { id: 'Pending', status: OrderStatus.Pending, label: 'Chờ xử lý' },
+  { id: 'Confirmed', status: OrderStatus.Confirmed, label: 'Đã xác nhận' },
+  { id: 'Preparing', status: OrderStatus.Preparing, label: 'Đang chuẩn bị' },
+  { id: 'Ready', status: OrderStatus.Ready, label: 'Sẵn sàng' },
+  { id: 'Delivering', status: OrderStatus.Delivering, label: 'Đang giao' },
+  { id: 'Completed', status: OrderStatus.Completed, label: 'Hoàn thành' },
+  { id: 'Cancelled', status: OrderStatus.Cancelled, label: 'Đã huỷ' },
 ];
 
 const OrderDashboard = () => {
