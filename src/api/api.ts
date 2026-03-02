@@ -112,6 +112,7 @@ export const storeApi = {
     getAll: () => api.get<StoreDto[]>('/api/stores'),
     getById: (id: number) => api.get<StoreDto>(`/api/stores/${id}`),
     getByTenant: (id: number) => api.get<StoreDto>(`/api/stores/tenant/${id}`),
+    toggleOpen: (id: number) => api.patch(`/api/stores/${id}/toggle-open`),
 };
 
 export const userApi = {
@@ -202,6 +203,7 @@ export const userApi = {
         }
     },
     editProfile: (data: EditProfileRequest) => api.put('/api/users/edit-profile', data),
+    changePassword: (data: { oldPassword: string; newPassword: string }) => api.put('/api/users/change-password', data),
     registerManager: (data: RegisterManagerRequest) => api.post('/api/users/register-manager', data),
     getCart: () => api.get('/api/users/temp-data'),
     updateCart: (data: any) => api.patch('/api/users/temp-data', data),

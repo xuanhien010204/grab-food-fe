@@ -3,8 +3,9 @@ import { useNavigate, Link } from 'react-router-dom';
 import { userApi, walletApi } from '../../../api/api';
 import { authStorage } from '../../../utils/auth';
 import type { UserProfileDto } from '../../../types/swagger';
-import { LogOut, User, Mail, Shield, Wallet, Loader2, Edit2, X, Phone, MapPin, Heart, Bell, ClipboardList, ChevronRight, Store, Clock } from 'lucide-react';
+import { LogOut, User, Mail, Shield, Wallet, Loader2, Edit2, X, Phone, MapPin, Heart, Bell, ClipboardList, ChevronRight, Store, Clock, Lock } from 'lucide-react';
 import { toast } from 'sonner';
+import { cartStore } from '../../../utils/cartStore';
 
 export function CustomerProfile() {
     const [profile, setProfile] = useState<UserProfileDto | null>(null);
@@ -16,6 +17,9 @@ export function CustomerProfile() {
     const [editForm, setEditForm] = useState({ name: '', email: '', phone: '' });
     const [isSaving, setIsSaving] = useState(false);
     const [showRoleChangePopup, setShowRoleChangePopup] = useState(false);
+    const [showChangePassword, setShowChangePassword] = useState(false);
+    const [pwForm, setPwForm] = useState({ oldPassword: '', newPassword: '', confirmPassword: '' });
+    const [isChangingPw, setIsChangingPw] = useState(false);
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -62,6 +66,7 @@ export function CustomerProfile() {
         } catch (err) {
             console.warn('Sign-out API call failed, clearing local session anyway:', err);
         } finally {
+            cartStore.clear();
             authStorage.clear();
             localStorage.removeItem('bypass_user');
             setSigningOut(false);
@@ -89,6 +94,32 @@ export function CustomerProfile() {
             toast.error(err.response?.data?.message || 'Không thể cập nhật thông tin');
         } finally {
             setIsSaving(false);
+        }
+    };
+
+    const handleChangePassword = async () => {
+        if (!pwForm.oldPassword || !pwForm.newPassword || !pwForm.confirmPassword) {
+            toast.error('Vui lòng điền đầy đủ thông tin');
+            return;
+        }
+        if (pwForm.newPassword !== pwForm.confirmPassword) {
+            toast.error('Mật khẩu mới và xác nhận không khớp');
+            return;
+        }
+        if (pwForm.newPassword.length < 6) {
+            toast.error('Mật khẩu mới phải có ít nhất 6 ký tự');
+            return;
+        }
+        try {
+            setIsChangingPw(true);
+            await userApi.changePassword({ oldPassword: pwForm.oldPassword, newPassword: pwForm.newPassword });
+            toast.success('Đổi mật khẩu thành công!');
+            setShowChangePassword(false);
+            setPwForm({ oldPassword: '', newPassword: '', confirmPassword: '' });
+        } catch (err: any) {
+            toast.error(err.response?.data?.message || 'Đổi mật khẩu thất bại. Vui lòng kiểm tra mật khẩu cũ.');
+        } finally {
+            setIsChangingPw(false);
         }
     };
 
@@ -230,7 +261,21 @@ export function CustomerProfile() {
                 ))}
             </div>
 
-            {/* Sign Out Button */}
+            {/* Change Password button */}
+            <button
+                onClick={() => setShowChangePassword(true)}
+                className="w-full flex items-center gap-3 bg-white rounded-xl p-4 shadow-sm hover:bg-gray-50 transition-colors mb-4"
+            >
+                <div className="w-10 h-10 bg-indigo-50 rounded-xl flex items-center justify-center shrink-0">
+                    <Lock className="w-5 h-5 text-indigo-500" />
+                </div>
+                <div className="flex-1 text-left">
+                    <p className="text-sm font-semibold text-gray-900">Đổi mật khẩu</p>
+                    <p className="text-xs text-gray-400">Cập nhật mật khẩu đăng nhập</p>
+                </div>
+                <ChevronRight className="w-4 h-4 text-gray-300" />
+            </button>
+
             <button
                 onClick={handleSignOut}
                 disabled={signingOut}
@@ -299,6 +344,68 @@ export function CustomerProfile() {
                             >
                                 {isSaving && <Loader2 className="w-4 h-4 animate-spin" />}
                                 {isSaving ? 'Đang lưu...' : 'Lưu'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Change Password Modal */}
+            {showChangePassword && (
+                <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+                    <div className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-sm space-y-4">
+                        <div className="flex items-center justify-between">
+                            <h2 className="text-lg font-bold text-gray-900">Đổi mật khẩu</h2>
+                            <button onClick={() => { setShowChangePassword(false); setPwForm({ oldPassword: '', newPassword: '', confirmPassword: '' }); }} className="p-1 hover:bg-gray-100 rounded-lg">
+                                <X className="w-5 h-5 text-gray-500" />
+                            </button>
+                        </div>
+                        <div className="space-y-3">
+                            <div>
+                                <label className="text-xs font-medium text-gray-500 mb-1 block">Mật khẩu hiện tại</label>
+                                <input
+                                    type="password"
+                                    value={pwForm.oldPassword}
+                                    onChange={e => setPwForm({ ...pwForm, oldPassword: e.target.value })}
+                                    className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                                    placeholder="Nhập mật khẩu hiện tại..."
+                                />
+                            </div>
+                            <div>
+                                <label className="text-xs font-medium text-gray-500 mb-1 block">Mật khẩu mới</label>
+                                <input
+                                    type="password"
+                                    value={pwForm.newPassword}
+                                    onChange={e => setPwForm({ ...pwForm, newPassword: e.target.value })}
+                                    className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                                    placeholder="Tối thiểu 6 ký tự..."
+                                />
+                            </div>
+                            <div>
+                                <label className="text-xs font-medium text-gray-500 mb-1 block">Xác nhận mật khẩu mới</label>
+                                <input
+                                    type="password"
+                                    value={pwForm.confirmPassword}
+                                    onChange={e => setPwForm({ ...pwForm, confirmPassword: e.target.value })}
+                                    className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                                    placeholder="Nhập lại mật khẩu mới..."
+                                />
+                            </div>
+                        </div>
+                        <div className="flex gap-3 pt-2">
+                            <button
+                                onClick={() => { setShowChangePassword(false); setPwForm({ oldPassword: '', newPassword: '', confirmPassword: '' }); }}
+                                className="flex-1 py-2.5 border border-gray-200 text-gray-700 font-semibold rounded-xl hover:bg-gray-50 transition-colors"
+                            >
+                                Huỷ
+                            </button>
+                            <button
+                                onClick={handleChangePassword}
+                                disabled={isChangingPw}
+                                className="flex-1 py-2.5 bg-indigo-500 hover:bg-indigo-600 text-white font-semibold rounded-xl transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                            >
+                                {isChangingPw && <Loader2 className="w-4 h-4 animate-spin" />}
+                                {isChangingPw ? 'Đang lưu...' : 'Xác nhận'}
                             </button>
                         </div>
                     </div>
