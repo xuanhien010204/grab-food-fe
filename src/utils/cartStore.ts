@@ -8,6 +8,7 @@ import { userApi } from '../api/api';
 
 const CART_KEY = 'grab_cart';
 const CART_COUNT_KEY = 'cartCount';
+const CART_USER_KEY = 'grab_cart_userId';
 
 export interface CartEntry {
     quantity: number;
@@ -43,6 +44,15 @@ function syncToApi(orderList: CartOrderList) {
 // ─── Public API ───────────────────────────────────────────
 
 export const cartStore = {
+    /** Set the userId that owns the current cart */
+    setCartUser(userId: string) {
+        localStorage.setItem(CART_USER_KEY, userId);
+    },
+
+    /** Get the userId that owns the current cart (or null) */
+    getCartUser(): string | null {
+        return localStorage.getItem(CART_USER_KEY);
+    },
     /** Get current cart */
     getItems(): CartOrderList {
         return read();
@@ -121,6 +131,7 @@ export const cartStore = {
     /** Clear entire cart */
     clear() {
         localStorage.removeItem(CART_KEY);
+        localStorage.removeItem(CART_USER_KEY);
         localStorage.setItem(CART_COUNT_KEY, '0');
         window.dispatchEvent(new Event('cartUpdate'));
         userApi.clearCart().catch(() => { });
@@ -138,11 +149,33 @@ export const cartStore = {
             const apiHasItems = Object.keys(apiOrderList).length > 0;
 
             if (!localHasItems && apiHasItems) {
-                // Local is empty — load from API (e.g. first login on new device)
+                // Local is empty, use API cart
                 write(apiOrderList);
-            } else if (localHasItems) {
-                // Local has items — local is always source of truth.
-                // Just ensure API is in sync with local; never sum quantities.
+            } else if (localHasItems && apiHasItems) {
+                // Both have items — LOCAL WINS strategy (avoid double-counting)
+                // Since we sync local→API on every addItem, the API copy is always
+                // a mirror of local. Summing them would double the quantities.
+                const localStoreId = Object.values(localOrderList)[0]?.foodStore?.storeId || Object.values(localOrderList)[0]?.foodStore?.StoreId;
+                const apiStoreId = Object.values(apiOrderList)[0]?.foodStore?.storeId || Object.values(apiOrderList)[0]?.foodStore?.StoreId;
+
+                if (localStoreId && apiStoreId && localStoreId !== apiStoreId) {
+                    // Different stores — keep local cart (user's most recent action)
+                    syncToApi(localOrderList);
+                } else {
+                    // Same store — local quantity always wins, only add API-only items
+                    const merged: CartOrderList = { ...localOrderList };
+                    for (const [key, apiEntry] of Object.entries(apiOrderList)) {
+                        if (!merged[key]) {
+                            // Item only in API (e.g. added from another device) — add it
+                            merged[key] = apiEntry;
+                        }
+                        // If item exists in both → keep local quantity (no summing)
+                    }
+                    write(merged);
+                    syncToApi(merged);
+                }
+            } else if (localHasItems && !apiHasItems) {
+                // API is empty, sync local to API
                 syncToApi(localOrderList);
             }
             // Both empty — nothing to do

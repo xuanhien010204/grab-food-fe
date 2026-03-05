@@ -7,6 +7,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { orderApi } from '../../../api/api';
+import { cartStore } from '../../../utils/cartStore';
 
 const STATUS_MAP: Record<string, { label: string; variant: 'default' | 'secondary' | 'outline' | 'destructive' | 'success' | 'warning' | 'info' }> = {
     '0': { label: 'Chờ xử lý', variant: 'warning' },
@@ -45,6 +46,39 @@ export default function OrderHistoryPage() {
         };
         fetchOrders();
     }, [navigate]);
+
+    const handleReorder = (order: any) => {
+        if (!order.items || order.items.length === 0) {
+            toast.error("Đơn hàng này không có chi tiết món ăn. Không thể đặt lại.");
+            return;
+        }
+
+        // 1. Wipe current cart to avoid cross-store conflicts
+        cartStore.clear();
+
+        // 2. Add all items from the old order
+        for (const item of order.items) {
+            // Reconstruct a minimal FoodStoreDto locally, just enough for the cart to render
+            const mockFoodStore = {
+                id: item.foodStoreId,
+                storeId: item.storeId || order.storeId,
+                price: item.price || (item.total / item.quantity),
+                food: {
+                    name: item.foodName,
+                    imageSrc: item.imageSrc || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500&q=80'
+                },
+                store: {
+                    name: order.storeName
+                }
+            };
+
+            // Force add because we just cleared the cart, no conflicts possible
+            cartStore.forceAddItem(String(item.foodStoreId), mockFoodStore, item.quantity);
+        }
+
+        toast.success("Đã thêm các món vào giỏ hàng!");
+        navigate('/cart');
+    };
 
     if (isLoading) {
         return (
@@ -143,7 +177,11 @@ export default function OrderHistoryPage() {
                                                 Chi tiết
                                             </Button>
                                         </Link>
-                                        <Button size="sm" className="h-10 px-4 rounded-xl text-xs shadow-md shadow-orange-100">
+                                        <Button
+                                            size="sm"
+                                            onClick={() => handleReorder(order)}
+                                            className="h-10 px-4 rounded-xl text-xs shadow-md shadow-orange-100"
+                                        >
                                             Đặt lại
                                         </Button>
                                     </div>

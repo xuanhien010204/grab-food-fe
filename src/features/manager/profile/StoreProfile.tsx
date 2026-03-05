@@ -7,6 +7,7 @@ import { toast } from 'sonner';
 const StoreProfile = () => {
   const [store, setStore] = useState<StoreDto | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isToggling, setIsToggling] = useState(false);
 
   useEffect(() => {
     const fetchStore = async () => {
@@ -49,6 +50,21 @@ const StoreProfile = () => {
       </div>
     );
   }
+
+  const handleToggleOpen = async () => {
+    if (!store) return;
+    try {
+      setIsToggling(true);
+      await storeApi.toggleOpen(store.id);
+      setStore({ ...store, isOpen: !store.isOpen });
+      toast.success(store.isOpen ? 'Đã đóng cửa hàng' : 'Đã mở cửa hàng');
+    } catch (err: any) {
+      console.error('Failed to toggle store open/close:', err);
+      toast.error(err.response?.data?.message || 'Chức năng chưa được server hỗ trợ hoặc có lỗi xảy ra');
+    } finally {
+      setIsToggling(false);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -173,17 +189,29 @@ const StoreProfile = () => {
                 <span className="font-bold text-gray-900 dark:text-white">{store.closeTime || 'N/A'}</span>
               </div>
             </div>
-            <div className={`mt-6 p-4 rounded-xl border flex items-center gap-3 ${store.isOpen
-              ? 'bg-green-100 dark:bg-green-900/20 border-green-200 dark:border-green-800'
-              : 'bg-red-100 dark:bg-red-900/20 border-red-200 dark:border-red-800'
-              }`}>
-              <span>{store.isOpen ? '✓' : '✕'}</span>
-              <div>
-                <p className={`text-sm font-bold leading-none ${store.isOpen ? 'text-green-800 dark:text-green-200' : 'text-red-800 dark:text-red-200'}`}>
-                  Trạng thái: {store.isOpen ? 'Đang mở' : 'Đã đóng'}
-                </p>
+            <button
+              onClick={handleToggleOpen}
+              disabled={isToggling}
+              className={`mt-6 p-4 rounded-xl border flex w-full items-center justify-between transition-all ${store.isOpen
+                ? 'bg-green-100 hover:bg-green-200 dark:bg-green-900/20 border-green-200 dark:border-green-800'
+                : 'bg-red-100 hover:bg-red-200 dark:bg-red-900/20 border-red-200 dark:border-red-800'
+                } disabled:opacity-50`}
+            >
+              <div className="flex items-center gap-3">
+                <div className={`flex items-center justify-center w-8 h-8 rounded-full ${store.isOpen ? 'bg-green-500 text-white' : 'bg-red-500 text-white'}`}>
+                  {isToggling ? <Loader2 className="w-4 h-4 animate-spin" /> : (store.isOpen ? '✓' : '✕')}
+                </div>
+                <div className="text-left">
+                  <p className={`text-sm font-bold leading-none ${store.isOpen ? 'text-green-800 dark:text-green-200' : 'text-red-800 dark:text-red-200'}`}>
+                    Trạng thái: {store.isOpen ? 'Đang mở' : 'Đã đóng'}
+                  </p>
+                  <p className="text-xs text-gray-500 mt-1">Nhấn để thay đổi</p>
+                </div>
               </div>
-            </div>
+              <div className={`w-12 h-6 rounded-full p-1 transition-colors ${store.isOpen ? 'bg-green-500' : 'bg-gray-300'}`}>
+                <div className={`w-4 h-4 rounded-full bg-white shadow-sm transition-transform ${store.isOpen ? 'translate-x-6' : 'translate-x-0'}`} />
+              </div>
+            </button>
           </div>
 
           {/* Status Card */}

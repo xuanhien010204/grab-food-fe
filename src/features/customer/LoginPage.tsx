@@ -57,6 +57,13 @@ export default function LoginPage() {
             authStorage.setRole(role);
 
             // B02: Merge local cart with server cart after login
+            // Cart Leak Fix: if a different user's cart is in localStorage, clear it first
+            const newUserId = String(profile.data?.id || '');
+            const storedCartUserId = cartStore.getCartUser();
+            if (storedCartUserId && storedCartUserId !== newUserId) {
+                cartStore.clear();
+            }
+            if (newUserId) cartStore.setCartUser(newUserId);
             await cartStore.syncFromApi();
 
             toast.success('Đăng nhập thành công');
