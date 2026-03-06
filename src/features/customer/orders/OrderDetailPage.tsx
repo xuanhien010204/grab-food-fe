@@ -208,14 +208,42 @@ export default function OrderDetailPage() {
                             ))}
                         </div>
 
-                        <div className="pt-4 border-t border-dashed border-gray-100 flex justify-between items-center mt-4">
-                            <div className="text-xs text-gray-400 font-medium">
-                                ID: #{typeof order.id === 'string' ? order.id.slice(-8).toUpperCase() : order.id} <br />
-                                Ngày: {new Date(order.purchaseDate || Date.now()).toLocaleString('vi-VN')}
+                        <div className="pt-4 border-t border-dashed border-gray-100 space-y-2 mt-4">
+                            {/* Subtotal */}
+                            <div className="flex justify-between items-center text-sm text-gray-500">
+                                <span>Tạm tính</span>
+                                <span className="font-medium text-gray-700">{(order.subTotal || 0).toLocaleString()}đ</span>
                             </div>
-                            <div className="text-right">
-                                <p className="text-[10px] text-gray-400 uppercase tracking-widest font-black">Tổng cộng</p>
-                                <span className="text-2xl font-black text-orange-600">{(order.total || 0).toLocaleString()}đ</span>
+                            {/* Shipping fee */}
+                            <div className="flex justify-between items-center text-sm text-gray-500">
+                                <span className="flex items-center gap-1">
+                                    🛵 Phí giao hàng
+                                </span>
+                                <span className="font-medium text-gray-700">
+                                    {(order.deliveryFee ?? 0) === 0
+                                        ? <span className="text-green-600 font-semibold">Miễn phí</span>
+                                        : `${(order.deliveryFee).toLocaleString()}đ`}
+                                </span>
+                            </div>
+                            {/* Discount */}
+                            {(order.discount ?? 0) > 0 && (
+                                <div className="flex justify-between items-center text-sm text-green-600">
+                                    <span className="flex items-center gap-1">
+                                        🏷️ Giảm giá (mã)
+                                    </span>
+                                    <span className="font-semibold">-{(order.discount).toLocaleString()}đ</span>
+                                </div>
+                            )}
+                            {/* Divider + Total */}
+                            <div className="pt-3 border-t border-dashed border-gray-100 flex justify-between items-center">
+                                <div className="text-xs text-gray-400 font-medium">
+                                    ID: #{typeof order.id === 'string' ? order.id.slice(-8).toUpperCase() : order.id} <br />
+                                    Ngày: {new Date(order.purchaseDate || Date.now()).toLocaleString('vi-VN')}
+                                </div>
+                                <div className="text-right">
+                                    <p className="text-[10px] text-gray-400 uppercase tracking-widest font-black">Tổng cộng</p>
+                                    <span className="text-2xl font-black text-orange-600">{(order.total || 0).toLocaleString()}đ</span>
+                                </div>
                             </div>
                         </div>
                     </Card>
