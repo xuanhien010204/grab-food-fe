@@ -43,9 +43,12 @@ import TenantManagement from './features/manager/tenants/TenantManagement';
 import RevenueAnalytics from './features/manager/dashboard/RevenueAnalytics';
 import ManagerVouchers from './features/manager/vouchers/ManagerVouchers';
 
+import ScrollToTop from './components/ScrollToTop';
+
 function App() {
   return (
     <Router>
+      <ScrollToTop />
       <Toaster position="top-center" richColors />
       <Routes>
         {/* Auth Routes */}

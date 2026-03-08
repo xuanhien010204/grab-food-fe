@@ -3,7 +3,11 @@ import { useNavigate, Link } from 'react-router-dom';
 import { userApi, walletApi } from '../../../api/api';
 import { authStorage } from '../../../utils/auth';
 import type { UserProfileDto } from '../../../types/swagger';
-import { LogOut, User, Mail, Shield, Wallet, Loader2, Edit2, X, Phone, MapPin, Heart, Bell, ClipboardList, ChevronRight, Store, Clock, Lock } from 'lucide-react';
+import { 
+    User, Mail, Phone, MapPin, ChevronRight, 
+    ArrowLeft, LogOut, Loader2, X, Edit2, Lock, 
+    Bell, Heart, Shield, Wallet, ClipboardList, Store
+} from 'lucide-react';
 import { toast } from 'sonner';
 import { cartStore } from '../../../utils/cartStore';
 
@@ -165,129 +169,144 @@ export function CustomerProfile() {
     }
 
     return (
-        <div className="p-4 max-w-lg mx-auto">
+        <div className="bg-[#FCF9F5] min-h-screen pb-32 font-sans">
             {/* Header */}
-            <div className="flex items-center justify-between mb-6">
-                <h1 className="text-xl font-bold text-gray-900">Thông tin cá nhân</h1>
-                <button
-                    onClick={handleEdit}
-                    className="flex items-center gap-1 text-orange-500 hover:text-orange-600 text-sm font-semibold transition-colors"
-                >
-                    <Edit2 className="w-4 h-4" />
-                    Chỉnh sửa
-                </button>
-            </div>
-
-            {/* Avatar & Name Card */}
-            <div className="bg-gradient-to-br from-orange-500 to-orange-600 rounded-2xl p-6 text-white mb-6 shadow-lg">
-                <div className="flex items-center gap-4">
-                    <div className="w-16 h-16 bg-white/20 backdrop-blur rounded-full flex items-center justify-center text-2xl font-bold">
-                        {profile?.name?.charAt(0)?.toUpperCase() || 'U'}
-                    </div>
-                    <div>
-                        <h2 className="text-lg font-bold">{profile?.name || 'N/A'}</h2>
-                        <p className="text-orange-100 text-sm">{profile?.roleName === 'User' ? 'Khách hàng' : profile?.roleName || 'Khách hàng'}</p>
-                        {/* M04: Pending approval badge */}
-                        {profile?.roleName === 'User' && (profile as any)?.pendingManagerRegistration && (
-                            <span className="inline-flex items-center gap-1 mt-1 px-2 py-0.5 bg-yellow-400/20 text-yellow-100 text-[10px] font-bold rounded-full">
-                                <Clock className="w-3 h-3" />
-                                Đang chờ duyệt đối tác
-                            </span>
-                        )}
-                    </div>
-                </div>
-            </div>
-
-            {/* Info Cards */}
-            <div className="space-y-3 mb-8">
-                <div className="bg-white rounded-xl p-4 shadow-sm flex items-center gap-4">
-                    <div className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center">
-                        <Mail className="w-5 h-5 text-blue-500" />
-                    </div>
-                    <div>
-                        <p className="text-xs text-gray-400 font-medium">Email</p>
-                        <p className="text-sm font-semibold text-gray-800">{profile?.email || 'N/A'}</p>
-                    </div>
-                </div>
-
-                <div className="bg-white rounded-xl p-4 shadow-sm flex items-center gap-4">
-                    <div className="w-10 h-10 bg-purple-50 rounded-xl flex items-center justify-center">
-                        <Shield className="w-5 h-5 text-purple-500" />
-                    </div>
-                    <div>
-                        <p className="text-xs text-gray-400 font-medium">Vai trò</p>
-                        <p className="text-sm font-semibold text-gray-800">{profile?.roleName === 'User' ? 'Khách hàng' : profile?.roleName || 'Khách hàng'}</p>
-                    </div>
-                </div>
-
-                <div className="bg-white rounded-xl p-4 shadow-sm flex items-center gap-4">
-                    <div className="w-10 h-10 bg-green-50 rounded-xl flex items-center justify-center">
-                        <Phone className="w-5 h-5 text-green-500" />
-                    </div>
-                    <div>
-                        <p className="text-xs text-gray-400 font-medium">Số điện thoại</p>
-                        <p className="text-sm font-semibold text-gray-800">{(profile as any)?.phone || 'Chưa cập nhật'}</p>
-                    </div>
-                </div>
-            </div>
-
-            {/* Quick Menu */}
-            <div className="bg-white rounded-2xl shadow-sm overflow-hidden mb-6">
-                {[
-                    { icon: Wallet, label: 'Ví của tôi', sub: balance != null ? balance.toLocaleString('vi-VN') + ' ₫' : '0 ₫', to: '/wallet', color: 'text-green-500', bg: 'bg-green-50' },
-                    { icon: ClipboardList, label: 'Lịch sử đơn hàng', sub: 'Xem lịch sử đặt ăn', to: '/orders', color: 'text-blue-500', bg: 'bg-blue-50' },
-                    { icon: MapPin, label: 'Địa chỉ giao hàng', sub: 'Quản lý địa chỉ', to: '/addresses', color: 'text-orange-500', bg: 'bg-orange-50' },
-                    { icon: Heart, label: 'Yêu thích', sub: 'Quán và món yêu thích', to: '/favorites', color: 'text-red-500', bg: 'bg-red-50' },
-                    { icon: Bell, label: 'Thông báo', sub: 'Xem tất cả thông báo', to: '/notifications', color: 'text-purple-500', bg: 'bg-purple-50' },
-                    // M01: Register Store link - only show for User (Customer) role
-                    ...((!profile?.roleName || profile?.roleName === 'User') ? [
-                        { icon: Store, label: 'Đăng ký trở thành đối tác', sub: 'Mở quán trên nền tảng', to: '/register-store', color: 'text-amber-500', bg: 'bg-amber-50' },
-                    ] : []),
-                ].map(({ icon: Icon, label, sub, to, color, bg }, idx, arr) => (
-                    <Link
-                        key={to}
-                        to={to}
-                        className={`flex items-center gap-4 p-4 hover:bg-gray-50 transition-colors${idx < arr.length - 1 ? ' border-b border-gray-100' : ''}`}
-                    >
-                        <div className={`w-10 h-10 ${bg} rounded-xl flex items-center justify-center shrink-0`}>
-                            <Icon className={`w-5 h-5 ${color}`} />
+            <div className="sticky top-0 z-30 bg-white/80 backdrop-blur-md border-b border-orange-100/50 px-4 py-4 mb-8">
+                <div className="max-w-6xl mx-auto flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                        <button onClick={() => navigate(-1)} className="p-2 hover:bg-orange-50 rounded-xl transition-colors">
+                            <ArrowLeft className="w-5 h-5 text-[#C76E00]" />
+                        </button>
+                        <div>
+                            <h1 className="text-xl font-black text-gray-900 tracking-tight uppercase italic flex items-center gap-2">
+                                <User className="w-5 h-5 text-[#C76E00]" />
+                                Tài khoản
+                            </h1>
+                            <p className="text-[10px] text-gray-400 font-bold uppercase tracking-[0.2em] mt-0.5">
+                                Thông tin cá nhân & Bảo mật
+                            </p>
                         </div>
-                        <div className="flex-1">
-                            <p className="text-sm font-semibold text-gray-900">{label}</p>
-                            <p className="text-xs text-gray-400">{sub}</p>
-                        </div>
-                        <ChevronRight className="w-4 h-4 text-gray-300" />
-                    </Link>
-                ))}
+                    </div>
+                </div>
             </div>
 
-            {/* Change Password button */}
-            <button
-                onClick={() => setShowChangePassword(true)}
-                className="w-full flex items-center gap-3 bg-white rounded-xl p-4 shadow-sm hover:bg-gray-50 transition-colors mb-4"
-            >
-                <div className="w-10 h-10 bg-indigo-50 rounded-xl flex items-center justify-center shrink-0">
-                    <Lock className="w-5 h-5 text-indigo-500" />
-                </div>
-                <div className="flex-1 text-left">
-                    <p className="text-sm font-semibold text-gray-900">Đổi mật khẩu</p>
-                    <p className="text-xs text-gray-400">Cập nhật mật khẩu đăng nhập</p>
-                </div>
-                <ChevronRight className="w-4 h-4 text-gray-300" />
-            </button>
+            <div className="max-w-6xl mx-auto px-4 sm:px-6">
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                    {/* LEFT COLUMN: IDENTITY & BASIC INFO */}
+                    <div className="lg:col-span-5 space-y-6">
+                        {/* HERO PROFILE CARD */}
+                        <div className="relative group">
+                            <div className="bg-white/80 backdrop-blur-xl rounded-3xl p-6 shadow-xl shadow-orange-900/5 border border-orange-100/50 flex items-center gap-6 transition-all hover:shadow-2xl hover:shadow-orange-900/10 hover:-translate-y-1">
+                                <div className="w-16 h-16 bg-gradient-to-br from-[#C76E00] to-[#E67E00] rounded-2xl flex items-center justify-center text-2xl font-black text-white shadow-lg shadow-orange-200 rotate-2 transition-transform group-hover:rotate-0 shrink-0">
+                                    {profile?.name?.charAt(0)?.toUpperCase() || 'U'}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                    <h2 className="text-lg font-black text-gray-900 tracking-tight uppercase truncate">{profile?.name || 'N/A'}</h2>
+                                    <span className="inline-block px-3 py-1 bg-orange-50 text-[#C76E00] text-[8px] font-black uppercase tracking-widest rounded-full mt-1 border border-orange-100">
+                                        {profile?.roleName === 'User' ? 'Khách hàng' : profile?.roleName || 'Thành viên'}
+                                    </span>
+                                </div>
+                                <button
+                                    onClick={handleEdit}
+                                    className="bg-gray-50 text-gray-400 p-2.5 rounded-xl hover:bg-[#C76E00] hover:text-white transition-all active:scale-95 border border-gray-100 shrink-0"
+                                >
+                                    <Edit2 className="w-4 h-4" />
+                                </button>
+                            </div>
+                        </div>
 
-            <button
-                onClick={handleSignOut}
-                disabled={signingOut}
-                className="w-full flex items-center justify-center gap-2 bg-red-50 hover:bg-red-100 text-red-600 font-semibold py-3.5 rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-                {signingOut ? (
-                    <Loader2 className="w-5 h-5 animate-spin" />
-                ) : (
-                    <LogOut className="w-5 h-5" />
-                )}
-                {signingOut ? 'Đang đăng xuất...' : 'Đăng xuất'}
-            </button>
+                        {/* BASIC INFO */}
+                        <div className="space-y-4">
+                            <div className="flex items-center space-x-2 text-gray-900 font-black ml-2 uppercase text-[9px] tracking-[0.2em] italic opacity-40">
+                                <User className="w-3 h-3" />
+                                <span>Thông tin cơ bản</span>
+                            </div>
+                            <div className="grid grid-cols-1 gap-3">
+                                <div className="bg-white/70 backdrop-blur-md rounded-2xl p-4 shadow-sm border border-orange-100/30 flex items-center gap-4 transition-all hover:shadow-md hover:bg-white hover:border-orange-100/60 group">
+                                    <div className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center border border-blue-100 shrink-0 group-hover:scale-110 transition-transform">
+                                        <Mail className="w-5 h-5 text-blue-500" />
+                                    </div>
+                                    <div className="min-w-0">
+                                        <p className="text-[8px] text-gray-400 font-black uppercase tracking-widest mb-0.5">Địa chỉ Email</p>
+                                        <p className="text-sm font-bold text-gray-800 truncate">{profile?.email || 'N/A'}</p>
+                                    </div>
+                                </div>
+
+                                <div className="bg-white/70 backdrop-blur-md rounded-2xl p-4 shadow-sm border border-orange-100/30 flex items-center gap-4 transition-all hover:shadow-md hover:bg-white hover:border-orange-100/60 group">
+                                    <div className="w-10 h-10 bg-emerald-50 rounded-xl flex items-center justify-center border border-emerald-100 shrink-0 group-hover:scale-110 transition-transform">
+                                        <Phone className="w-5 h-5 text-emerald-500" />
+                                    </div>
+                                    <div className="min-w-0">
+                                        <p className="text-[8px] text-gray-400 font-black uppercase tracking-widest mb-0.5">Số điện thoại</p>
+                                        <p className="text-sm font-bold text-gray-800 truncate">{(profile as any)?.phone || 'Chưa cập nhật'}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* LOGOUT AT BOTTOM OF LEFT COL */}
+                        <button
+                            onClick={handleSignOut}
+                            disabled={signingOut}
+                            className="w-full mt-4 flex items-center justify-center gap-3 bg-red-50 hover:bg-red-100 text-red-600 font-black py-4 rounded-2xl transition-all disabled:opacity-50 text-[10px] uppercase tracking-[0.2em] active:scale-95"
+                        >
+                            {signingOut ? <Loader2 className="w-4 h-4 animate-spin" /> : <LogOut className="w-4 h-4" />}
+                            {signingOut ? 'Đang thoát...' : 'Đăng xuất tài khoản'}
+                        </button>
+                    </div>
+
+                    {/* RIGHT COLUMN: NAVIGATION & SERVICES */}
+                    <div className="lg:col-span-7 space-y-6">
+                        <div className="flex items-center space-x-2 text-gray-900 font-black ml-2 uppercase text-[9px] tracking-[0.2em] italic opacity-40">
+                            <Shield className="w-3 h-3" />
+                            <span>Tiện ích & Bảo mật</span>
+                        </div>
+                        
+                        <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-xl shadow-orange-900/5 border border-orange-100/50 overflow-hidden divide-y divide-orange-50/50">
+                            {[
+                                { icon: Wallet, label: 'Ví FoodDelivery', sub: balance != null ? balance.toLocaleString('vi-VN') + ' ₫' : '0 ₫', to: '/wallet', color: 'text-emerald-500', bg: 'bg-emerald-50' },
+                                { icon: ClipboardList, label: 'Lịch sử đơn hàng', sub: 'Hành trình ngon miệng', to: '/orders', color: 'text-blue-500', bg: 'bg-blue-50' },
+                                { icon: MapPin, label: 'Địa chỉ giao hàng', sub: 'Địa điểm nhận món', to: '/addresses', color: 'text-[#C76E00]', bg: 'bg-[#C76E00]/5' },
+                                { icon: Heart, label: 'Món ăn yêu thích', sub: 'Ghi nhớ hương vị', to: '/favorites', color: 'text-rose-500', bg: 'bg-rose-50' },
+                                { icon: Bell, label: 'Thông báo mới', sub: 'Đừng bỏ lỡ tin vui', to: '/notifications', color: 'text-indigo-500', bg: 'bg-indigo-50' },
+                                ...((!profile?.roleName || profile?.roleName === 'User') ? [
+                                    { icon: Store, label: 'Đăng ký bán hàng', sub: 'Bắt đầu kinh doanh ngay', to: '/register-store', color: 'text-amber-500', bg: 'bg-amber-50' },
+                                ] : []),
+                            ].map(({ icon: Icon, label, sub, to, color, bg }) => (
+                                <Link
+                                    key={to}
+                                    to={to}
+                                    className="flex items-center gap-4 p-5 hover:bg-orange-50/30 transition-all group"
+                                >
+                                    <div className={`w-10 h-10 ${bg} rounded-xl flex items-center justify-center shrink-0 border border-white group-hover:rotate-6 transition-transform shadow-sm group-hover:shadow-orange-100`}>
+                                        <Icon className={`w-5 h-5 ${color}`} />
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                        <p className="text-xs font-black text-gray-900 uppercase tracking-tight truncate group-hover:text-[#C76E00] transition-colors">{label}</p>
+                                        <p className="text-[9px] text-gray-400 font-bold mt-0.5 uppercase tracking-widest truncate">{sub}</p>
+                                    </div>
+                                    <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-[#C76E00] group-hover:translate-x-1 transition-all" />
+                                </Link>
+                            ))}
+                            
+                            {/* Change Password integrated in the menu list */}
+                            <button
+                                onClick={() => setShowChangePassword(true)}
+                                className="w-full flex items-center gap-4 p-5 hover:bg-orange-50/30 transition-all group text-left"
+                            >
+                                <div className="w-10 h-10 bg-indigo-50 rounded-xl flex items-center justify-center shrink-0 border border-white group-hover:rotate-6 transition-transform shadow-sm group-hover:shadow-indigo-100">
+                                    <Lock className="w-5 h-5 text-indigo-500" />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                    <p className="text-xs font-black text-gray-900 uppercase tracking-tight truncate group-hover:text-indigo-600 transition-colors">Đổi mật khẩu</p>
+                                    <p className="text-[9px] text-gray-400 font-bold mt-0.5 uppercase tracking-widest truncate">Bảo vệ tài khoản</p>
+                                </div>
+                                <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-indigo-500 group-hover:translate-x-1 transition-all" />
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
             {/* Edit Profile Modal */}
             {isEditing && (
                 <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">

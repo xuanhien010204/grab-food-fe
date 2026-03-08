@@ -7,6 +7,8 @@ import { foodStoreApi, favoriteApi } from '../../../api/api';
 import type { FoodStoreDto } from '../../../types/swagger';
 import { authStorage } from '../../../utils/auth';
 import { cartStore } from '../../../utils/cartStore';
+import { cn } from '../../../lib/utils';
+import { Badge } from '../../../components/ui/Badge';
 
 export default function ProductDetail() {
     const navigate = useNavigate();
@@ -110,126 +112,174 @@ export default function ProductDetail() {
     const total = product.price * quantity;
 
     return (
-        <div className="bg-gray-50 min-h-screen pb-28">
-            {/* HEADER IMAGE */}
-            <div className="relative h-[280px]">
-                <img
-                    src={product.food?.imageSrc || ''}
-                    alt={product.food?.name}
-                    className="w-full h-full object-cover"
-                    onError={e => { (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500&q=80'; }}
-                />
-                <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-transparent to-transparent" />
-                <div className="absolute top-0 left-0 right-0 p-4 flex justify-between items-start">
-                    <button onClick={() => navigate(-1)} className="bg-white/20 backdrop-blur-md p-2 rounded-full text-white hover:bg-white/30 transition-colors">
-                        <ArrowLeft className="w-6 h-6" />
-                    </button>
-                    <div className="flex gap-2">
-                        <button onClick={toggleFavFood} className="bg-white/20 backdrop-blur-md p-2 rounded-full text-white hover:bg-white/30 transition-colors">
-                            <Heart className={`w-6 h-6 ${isFav ? 'fill-red-500 text-red-500' : ''}`} />
+        <div className="bg-[#FCF9F5] min-h-screen pb-12 font-sans">
+            {/* STICKY HEADER */}
+            <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-[#C76E00]/10 shadow-sm transition-all duration-300">
+                <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                        <button 
+                            onClick={() => navigate(-1)}
+                            className="p-2 -ml-2 hover:bg-orange-50 rounded-full text-gray-900 transition-colors"
+                        >
+                            <ArrowLeft className="w-5 h-5" />
                         </button>
-                        <Link to="/cart" className="bg-white/20 backdrop-blur-md p-2 rounded-full text-white hover:bg-white/30 transition-colors">
-                            <ShoppingCart className="w-6 h-6" />
+                        <h1 className="text-sm font-black text-gray-900 uppercase italic tracking-tighter truncate max-w-[200px] sm:max-w-md">
+                            {product.food?.name}
+                        </h1>
+                    </div>
+                    
+                    <div className="flex items-center gap-2">
+                        <button
+                            onClick={toggleFavFood}
+                            className={cn(
+                                "p-2 rounded-full transition-all border",
+                                isFav 
+                                    ? "bg-red-50 text-red-500 border-red-100" 
+                                    : "hover:bg-gray-100 text-gray-600 border-transparent"
+                            )}
+                        >
+                            <Heart className={cn("w-5 h-5", isFav && "fill-current")} />
+                        </button>
+                        <Link to="/cart" className="p-2 hover:bg-gray-100 rounded-full text-gray-600 transition-colors border border-transparent">
+                            <ShoppingCart className="w-5 h-5" />
                         </Link>
                     </div>
                 </div>
-            </div>
+            </header>
 
-            <div className="-mt-6 bg-white rounded-t-3xl relative z-10 p-5">
-                {/* Food name & rating */}
-                <h1 className="text-2xl font-bold text-gray-900">{product.food?.name}</h1>
-                <div className="flex items-center gap-3 mt-2 text-sm text-gray-500">
-                    <span className="flex items-center text-yellow-500 font-bold">
-                        <Star className="w-4 h-4 fill-yellow-500 mr-1" />4.8
-                    </span>
-                    {product.food?.foodTypeName && (
-                        <span className="bg-orange-50 text-orange-600 text-xs font-semibold px-2.5 py-0.5 rounded-full">
-                            {product.food.foodTypeName}
-                        </span>
-                    )}
-                    {product.isAvailable === false && (
-                        <span className="bg-red-50 text-red-500 text-xs font-semibold px-2.5 py-0.5 rounded-full">Hết hàng</span>
-                    )}
-                </div>
-
-                {/* Store info */}
-                {product.store && (
-                    <Link to={`/store/${product.store.id}`} className="mt-4 flex items-center gap-3 p-3 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors">
-                        <div className="w-10 h-10 rounded-xl bg-orange-100 flex items-center justify-center shrink-0">
-                            🏪
+            <main className="max-w-6xl mx-auto px-4 pt-6">
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12">
+                    {/* LEFT COLUMN: PRODUCT IMAGE & INFO */}
+                    <div className="lg:col-span-7 space-y-8">
+                        {/* PRODUCT IMAGE */}
+                        <div className="relative group">
+                            <div className="aspect-square sm:aspect-video rounded-[2.5rem] overflow-hidden bg-white shadow-2xl shadow-orange-900/10 border-4 border-white">
+                                <img
+                                    src={product.food?.imageSrc || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=1000'}
+                                    alt={product.food?.name}
+                                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-1000"
+                                    onError={e => { (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=800&q=80'; }}
+                                />
+                            </div>
+                            {product.isAvailable === false && (
+                                <div className="absolute top-6 right-6">
+                                    <Badge className="bg-red-500 text-white px-4 py-2 rounded-xl font-black uppercase tracking-widest shadow-xl border-none">Hết hàng</Badge>
+                                </div>
+                            )}
                         </div>
-                        <div className="flex-1 min-w-0">
-                            <h3 className="font-semibold text-gray-900 text-sm truncate">{product.store.name}</h3>
-                            <div className="flex items-center gap-2 text-xs text-gray-500 mt-0.5">
-                                <span className="flex items-center truncate"><MapPin className="w-3 h-3 mr-0.5 shrink-0" />{product.store.address}</span>
-                                <span className="flex items-center shrink-0"><Clock className="w-3 h-3 mr-0.5" />15-20p</span>
+
+                        {/* PRODUCT INFO */}
+                        <div className="space-y-4 px-2">
+                             <div className="flex items-center gap-3">
+                                {product.food?.foodTypeName && (
+                                    <Badge className="bg-[#C76E00]/10 text-[#C76E00] border-none text-[10px] font-black uppercase tracking-[0.2em] px-3 py-1 rounded-full">
+                                        {product.food.foodTypeName}
+                                    </Badge>
+                                )}
+                                <div className="flex items-center text-yellow-500 font-black text-xs">
+                                    <Star className="w-4 h-4 fill-yellow-500 mr-1" /> 4.8
+                                </div>
+                            </div>
+                            <h2 className="text-3xl sm:text-4xl font-black text-gray-900 uppercase italic tracking-tight leading-tight">
+                                {product.food?.name}
+                            </h2>
+                            <p className="text-gray-500 text-sm leading-relaxed max-w-2xl">
+                                Món ăn này được chế biến từ những nguyên liệu tươi ngon nhất, đảm bảo hương vị đậm đà và trải nghiệm ẩm thực tuyệt vời của bạn.
+                            </p>
+                        </div>
+                    </div>
+
+                    {/* RIGHT COLUMN: ORDER CARD & STORE BRIEF */}
+                    <div className="lg:col-span-5 space-y-6">
+                        {/* FLOATING ORDER CARD */}
+                        <div className="bg-white rounded-[2.5rem] p-8 shadow-2xl shadow-orange-900/5 border border-orange-100/50 space-y-8 sticky top-24">
+                            <div className="flex items-end justify-between border-b border-orange-50 pb-6">
+                                <div>
+                                    <p className="text-[10px] text-gray-400 font-black uppercase tracking-[0.2em] mb-1">Giá mỗi phần</p>
+                                    <h3 className="text-3xl font-black text-[#C76E00] italic leading-none">{product.price.toLocaleString()}đ</h3>
+                                </div>
+                                {product.size && (
+                                    <div className="text-right">
+                                        <p className="text-[10px] text-gray-400 font-black uppercase tracking-[0.2em] mb-1">Kích cỡ</p>
+                                        <Badge variant="outline" className="border-orange-200 text-[#C76E00] font-black uppercase italic rounded-lg tracking-tighter">
+                                            {(product.size as any)?.name || 'Thường'}
+                                        </Badge>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* QUANTITY & NOTE */}
+                            <div className="space-y-6">
+                                <div className="space-y-3">
+                                    <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Số lượng</h4>
+                                    <div className="flex items-center gap-6 bg-gray-50 p-2 rounded-2xl w-fit">
+                                        <button
+                                            onClick={() => setQuantity(q => Math.max(1, q - 1))}
+                                            className="w-10 h-10 rounded-xl bg-white shadow-sm border border-gray-100 flex items-center justify-center hover:bg-orange-50 hover:text-[#C76E00] transition-all active:scale-90"
+                                        >
+                                            <Minus className="w-4 h-4" />
+                                        </button>
+                                        <span className="text-xl font-black w-8 text-center tabular-nums">{quantity}</span>
+                                        <button
+                                            onClick={() => setQuantity(q => q + 1)}
+                                            className="w-10 h-10 rounded-xl bg-[#C76E00] text-white flex items-center justify-center transition-all shadow-lg shadow-orange-900/20 hover:scale-105 active:scale-90"
+                                        >
+                                            <Plus className="w-4 h-4" />
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div className="space-y-3">
+                                    <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Ghi chú (Tùy chọn)</h4>
+                                    <textarea
+                                        className="w-full p-4 bg-gray-50 border-none rounded-2xl focus:ring-2 focus:ring-[#C76E00]/20 text-sm outline-none placeholder:text-gray-300 font-medium h-24 transition-all"
+                                        value={note}
+                                        onChange={e => setNote(e.target.value)}
+                                        placeholder="Ví dụ: Ít cay, không hành..."
+                                    />
+                                </div>
+                            </div>
+
+                            {/* ACTION BUTTON */}
+                            <div className="pt-4 space-y-4">
+                                <div className="flex items-center justify-between px-2">
+                                    <span className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Tổng cộng</span>
+                                    <span className="text-xl font-black text-gray-900 italic tracking-tighter">{total.toLocaleString()}đ</span>
+                                </div>
+                                <Button
+                                    onClick={handleAddToCart}
+                                    isLoading={isAdding}
+                                    disabled={isAdding || product.isAvailable === false}
+                                    className="w-full py-7 rounded-[1.5rem] bg-[#C76E00] hover:bg-[#A55B00] text-white font-black text-xs uppercase tracking-[0.2em] shadow-2xl shadow-orange-900/20 active:scale-95 transition-all"
+                                >
+                                    THÊM VÀO GIỎ HÀNG
+                                </Button>
                             </div>
                         </div>
-                    </Link>
-                )}
 
-                {/* Price */}
-                <div className="mt-5 p-4 bg-orange-50 rounded-xl flex items-center justify-between">
-                    <div>
-                        <p className="text-xs text-gray-500">Giá</p>
-                        <p className="text-2xl font-black text-orange-600">{product.price.toLocaleString()}đ</p>
-                    </div>
-                    {product.size && (
-                        <div className="text-right">
-                            <p className="text-xs text-gray-500">Size</p>
-                            <p className="font-bold text-gray-800">{(product.size as any)?.name || 'Thường'}</p>
-                        </div>
-                    )}
-                </div>
-
-                {/* Quantity */}
-                <div className="mt-5">
-                    <h3 className="font-bold text-gray-900 mb-3">Số lượng</h3>
-                    <div className="flex items-center gap-4">
-                        <button
-                            onClick={() => setQuantity(q => Math.max(1, q - 1))}
-                            className="w-10 h-10 rounded-full border-2 border-gray-200 flex items-center justify-center hover:border-orange-400 hover:text-orange-500 transition-colors"
-                        >
-                            <Minus className="w-4 h-4" />
-                        </button>
-                        <span className="text-xl font-bold w-8 text-center">{quantity}</span>
-                        <button
-                            onClick={() => setQuantity(q => q + 1)}
-                            className="w-10 h-10 rounded-full bg-orange-500 hover:bg-orange-600 text-white flex items-center justify-center transition-colors shadow-md shadow-orange-200"
-                        >
-                            <Plus className="w-4 h-4" />
-                        </button>
+                        {/* STORE BRIEF */}
+                        {product.store && (
+                            <Link to={`/store/${product.store.id}`} className="block group">
+                                <div className="bg-[#1A1A1A] rounded-[2rem] p-6 shadow-xl shadow-orange-900/10 transition-all hover:-translate-y-1">
+                                    <div className="flex items-center gap-4">
+                                        <div className="w-14 h-14 bg-[#C76E00] rounded-2xl flex items-center justify-center shadow-lg shadow-orange-900/20 shrink-0 group-hover:rotate-6 transition-transform">
+                                            <ShoppingCart className="w-6 h-6 text-white" />
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <p className="text-[9px] text-[#C76E00] font-black uppercase tracking-widest mb-0.5">Cung cấp bởi</p>
+                                            <h3 className="text-sm font-black text-white uppercase italic truncate">{product.store.name}</h3>
+                                            <div className="flex items-center gap-3 text-[9px] text-gray-400 font-bold uppercase mt-1">
+                                                <span className="flex items-center truncate"><MapPin className="w-3 h-3 mr-1 text-[#C76E00]" /> {product.store.address}</span>
+                                                <span className="flex items-center shrink-0"><Clock className="w-3 h-3 mr-1 text-[#C76E00]" /> 15-20p</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </Link>
+                        )}
                     </div>
                 </div>
-
-                {/* Note */}
-                <div className="mt-5">
-                    <h3 className="font-bold text-gray-900 mb-2">💬 Ghi chú</h3>
-                    <textarea
-                        className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-300 focus:border-orange-400 text-sm resize-none outline-none"
-                        rows={2}
-                        value={note}
-                        onChange={e => setNote(e.target.value)}
-                        placeholder="Ví dụ: Ít hành, không cay, thêm nước tương..."
-                    />
-                </div>
-            </div>
-
-            {/* Bottom bar */}
-            <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 p-4 z-50 flex items-center justify-between shadow-[0_-4px_24px_rgba(0,0,0,0.08)]">
-                <div>
-                    <p className="text-xs text-gray-400">Tổng cộng</p>
-                    <p className="text-2xl font-black text-orange-600">{total.toLocaleString()}đ</p>
-                </div>
-                <Button
-                    onClick={handleAddToCart}
-                    isLoading={isAdding}
-                    disabled={isAdding || product.isAvailable === false}
-                    className="px-8 py-3 rounded-2xl shadow-lg shadow-orange-200 text-base font-bold"
-                >
-                    🛒 Thêm vào giỏ
-                </Button>
-            </div>
+            </main>
         </div>
     );
 }
