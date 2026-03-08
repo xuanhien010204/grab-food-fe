@@ -58,7 +58,7 @@ export default function RegisterPage() {
     };
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-white to-orange-50 flex items-center justify-center p-4">
+        <div className="min-h-screen bg-[#FCF9F5] flex items-center justify-center p-4 font-sans">
             <div className="w-full max-w-md space-y-6">
                 <div className="text-center">
                     <div className="mx-auto h-12 w-12 bg-orange-100 rounded-full flex items-center justify-center mb-2">
@@ -67,7 +67,7 @@ export default function RegisterPage() {
                     <h2 className="text-2xl font-bold text-gray-900">Tạo tài khoản mới</h2>
                 </div>
 
-                <Card className="border-none shadow-lg bg-white/80 backdrop-blur-sm">
+                <Card className="border-none shadow-2xl shadow-orange-900/5 bg-white/80 backdrop-blur-xl rounded-[2.5rem] overflow-hidden">
                     <CardContent className="pt-6">
                         <form onSubmit={handleRegister} className="space-y-4">
                             <div className="space-y-2">
@@ -120,7 +120,7 @@ export default function RegisterPage() {
                                 />
                             </div>
 
-                            <Button type="submit" className="w-full mt-2" isLoading={isLoading}>
+                            <Button type="submit" className="w-full mt-4 py-6 rounded-2xl bg-[#C76E00] hover:bg-[#A55B00] text-white font-black text-xs uppercase tracking-[0.2em] shadow-xl shadow-orange-900/20 active:scale-95 transition-all" isLoading={isLoading}>
                                 ĐĂNG KÝ
                             </Button>
                         </form>

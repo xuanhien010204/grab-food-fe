@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
 import { ArrowLeft, Heart, Store, UtensilsCrossed, Star, MapPin } from 'lucide-react';
-import { Link } from 'react-router-dom';
-import { toast } from 'sonner';
 import { favoriteApi } from '../../../api/api';
-import { Card, CardContent } from '../../../components/ui/Card';
 import { cn } from '../../../lib/utils';
+import { toast } from 'sonner';
+import { Card, CardContent } from '../../../components/ui/Card';
 
 export default function FavoritesPage() {
+    const navigate = useNavigate();
     const [activeTab, setActiveTab] = useState<'stores' | 'foods'>('stores');
     const [favStores, setFavStores] = useState<any[]>([]);
     const [favFoods, setFavFoods] = useState<any[]>([]);
@@ -55,23 +56,37 @@ export default function FavoritesPage() {
     const activeData = activeTab === 'stores' ? favStores : favFoods;
 
     return (
-        <div className="pb-24 bg-gray-50 min-h-screen">
+        <div className="pb-24 bg-[#FCF9F5] min-h-screen font-sans">
             {/* Header */}
-            <div className="bg-gradient-to-br from-pink-500 via-red-500 to-orange-500 rounded-b-[2rem] shadow-xl p-6 pt-10 text-white">
-                <div className="flex items-center gap-3 mb-4">
-                    <Link to="/" className="bg-white/20 backdrop-blur-md p-2 rounded-full hover:bg-white/30 transition-colors">
-                        <ArrowLeft className="w-5 h-5" />
-                    </Link>
-                    <h1 className="text-xl font-bold">Yêu thích</h1>
+            <div className="sticky top-0 z-30 bg-white/80 backdrop-blur-md border-b border-orange-100/50 px-4 py-4 mb-6">
+                <div className="max-w-4xl mx-auto flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                        <button onClick={() => navigate(-1)} className="p-2 hover:bg-orange-50 rounded-xl transition-colors">
+                            <ArrowLeft className="w-5 h-5 text-[#C76E00]" />
+                        </button>
+                        <div>
+                            <h1 className="text-xl font-black text-gray-900 tracking-tight uppercase italic flex items-center gap-2">
+                                <Heart className="w-5 h-5 text-[#C76E00]" />
+                                Yêu thích
+                            </h1>
+                            <p className="text-[10px] text-gray-400 font-bold uppercase tracking-[0.2em] mt-0.5">
+                                Các món ăn & Cửa hàng đã lưu
+                            </p>
+                        </div>
+                    </div>
                 </div>
+            </div>
 
-                {/* Tabs */}
-                <div className="flex bg-white/20 backdrop-blur-md rounded-xl p-1 gap-1">
+            <div className="max-w-4xl mx-auto px-4 sm:px-6">
+                {/* Premium Tabs */}
+                <div className="flex bg-orange-50/50 backdrop-blur-sm rounded-2xl p-1.5 gap-2 mb-8 border border-orange-100/30">
                     <button
                         onClick={() => setActiveTab('stores')}
                         className={cn(
-                            "flex-1 py-2.5 rounded-lg text-sm font-bold transition-all flex items-center justify-center gap-2",
-                            activeTab === 'stores' ? "bg-white text-red-600 shadow-md" : "text-white/80 hover:text-white"
+                            "flex-1 py-3 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2",
+                            activeTab === 'stores' 
+                                ? "bg-white text-[#C76E00] shadow-sm shadow-orange-200/50 border border-orange-100/50" 
+                                : "text-gray-400 hover:text-gray-600"
                         )}
                     >
                         <Store className="w-4 h-4" />
@@ -80,18 +95,25 @@ export default function FavoritesPage() {
                     <button
                         onClick={() => setActiveTab('foods')}
                         className={cn(
-                            "flex-1 py-2.5 rounded-lg text-sm font-bold transition-all flex items-center justify-center gap-2",
-                            activeTab === 'foods' ? "bg-white text-red-600 shadow-md" : "text-white/80 hover:text-white"
+                            "flex-1 py-3 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2",
+                            activeTab === 'foods' 
+                                ? "bg-white text-[#C76E00] shadow-sm shadow-orange-200/50 border border-orange-100/50" 
+                                : "text-gray-400 hover:text-gray-600"
                         )}
                     >
                         <UtensilsCrossed className="w-4 h-4" />
                         Món ăn
                     </button>
                 </div>
-            </div>
 
-            <div className="px-4 mt-6">
-                <p className="text-sm text-gray-500 mb-4">{activeData.length} mục yêu thích</p>
+                <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-2">
+                        <div className="w-1 h-4 bg-[#C76E00] rounded-full" />
+                        <h2 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">
+                            {activeData.length} mục yêu thích
+                        </h2>
+                    </div>
+                </div>
 
                 {isLoading ? (
                     <div className="space-y-4">

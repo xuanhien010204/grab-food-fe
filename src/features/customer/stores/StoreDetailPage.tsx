@@ -3,7 +3,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { ArrowLeft, MapPin, Star, Heart, Clock, Plus, ShoppingCart } from 'lucide-react';
 import { storeApi, foodStoreApi, favoriteApi, reviewApi } from '../../../api/api';
 import type { StoreDto, FoodStoreDto } from '../../../types/swagger';
-import { Card } from '../../../components/ui/Card';
+import { cn } from '../../../lib/utils';
 import { Badge } from '../../../components/ui/Badge';
 import { toast } from 'sonner';
 import { Modal } from '../../../components/ui/Modal';
@@ -19,6 +19,7 @@ export default function StoreDetailPage() {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [isFav, setIsFav] = useState(false);
+    const [favFoodIds, setFavFoodIds] = useState<Set<number>>(new Set());
     const [reviews, setReviews] = useState<any[]>([]);
 
     // Cart conflict dialog state
@@ -29,6 +30,14 @@ export default function StoreDetailPage() {
     useEffect(() => {
         if (!id) return;
         favoriteApi.checkStore(Number(id)).then(res => setIsFav(!!res.data)).catch(() => { });
+        
+        // Initial fetch of favorite foods to sync hearts
+        if (authStorage.getToken()) {
+            favoriteApi.getFoods().then(res => {
+                const ids = new Set((res.data as any[] || []).map(f => f.foodId || f.id));
+                setFavFoodIds(ids);
+            }).catch(() => { });
+        }
     }, [id]);
 
     const toggleFav = async () => {
@@ -37,13 +46,44 @@ export default function StoreDetailPage() {
             if (isFav) {
                 await favoriteApi.removeStore(Number(id));
                 setIsFav(false);
-                toast.success('Đã bỏ yêu thích');
+                toast.success('Đã bỏ yêu thích cửa hàng');
             } else {
                 await favoriteApi.addStore(Number(id));
                 setIsFav(true);
-                toast.success('Đã thêm yêu thích ♥');
+                toast.success('Đã thêm yêu thích cửa hàng ♥');
             }
         } catch { toast.error('Lỗi khi thao tác yêu thích'); }
+    };
+
+    const toggleFoodFav = async (foodId: number, foodName: string) => {
+        if (!authStorage.getToken()) {
+            toast.error('Vui lòng đăng nhập để thực hiện');
+            navigate('/login');
+            return;
+        }
+
+        const isCurrentlyFav = favFoodIds.has(foodId);
+        try {
+            if (isCurrentlyFav) {
+                await favoriteApi.removeFood(foodId);
+                setFavFoodIds(prev => {
+                    const next = new Set(prev);
+                    next.delete(foodId);
+                    return next;
+                });
+                toast.success(`Đã bỏ yêu thích ${foodName}`);
+            } else {
+                await favoriteApi.addFood(foodId);
+                setFavFoodIds(prev => {
+                    const next = new Set(prev);
+                    next.add(foodId);
+                    return next;
+                });
+                toast.success(`Đã thêm yêu thích ${foodName} ♥`);
+            }
+        } catch {
+            toast.error('Lỗi khi thao tác yêu thích món ăn');
+        }
     };
 
     useEffect(() => {
@@ -119,149 +159,252 @@ export default function StoreDetailPage() {
     }
 
     return (
-        <div className="pb-24 bg-gray-50 min-h-screen">
-            {/* Store Header Image */}
-            <div className="relative h-[220px]">
-                <img src={(store as any).imageSrc || ''} alt={(store as any).name} className="w-full h-full object-cover" />
-                <div className="absolute top-0 left-0 right-0 p-4 flex justify-between items-start bg-gradient-to-b from-black/60 to-transparent">
-                    <button
-                        onClick={() => navigate(-1)}
-                        className="bg-white/20 backdrop-blur-md p-2 rounded-full text-white hover:bg-white/30 transition-colors"
-                    >
-                        <ArrowLeft className="w-6 h-6" />
-                    </button>
-                    <div className="flex gap-2">
+        <div className="pb-24 bg-[#FCF9F5] min-h-screen font-sans">
+            {/* STICKY HEADER */}
+            <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-[#C76E00]/10 shadow-sm transition-all duration-300">
+                <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                        <button 
+                            onClick={() => navigate(-1)}
+                            className="p-2 -ml-2 hover:bg-orange-50 rounded-full text-gray-900 transition-colors"
+                        >
+                            <ArrowLeft className="w-5 h-5" />
+                        </button>
+                        <h1 className="text-sm font-black text-gray-900 uppercase italic tracking-tighter truncate max-w-[200px] sm:max-w-md">
+                            {store.name}
+                        </h1>
+                    </div>
+                    
+                    <div className="flex items-center gap-2">
                         <button
                             onClick={toggleFav}
-                            className="bg-white/20 backdrop-blur-md p-2 rounded-full text-white hover:bg-white/30 transition-colors"
+                            className={cn(
+                                "p-2 rounded-full transition-all border",
+                                isFav 
+                                    ? "bg-red-50 text-red-500 border-red-100" 
+                                    : "hover:bg-gray-100 text-gray-600 border-transparent"
+                            )}
                         >
-                            <Heart className={`w-6 h-6 ${isFav ? 'fill-red-500 text-red-500' : ''}`} />
+                            <Heart className={cn("w-5 h-5", isFav && "fill-current")} />
                         </button>
-                        <Link to="/cart" className="bg-white/20 backdrop-blur-md p-2 rounded-full text-white hover:bg-white/30 transition-colors">
-                            <ShoppingCart className="w-6 h-6" />
+                        <Link to="/cart" className="p-2 hover:bg-gray-100 rounded-full text-gray-600 transition-colors border border-transparent">
+                            <ShoppingCart className="w-5 h-5" />
                         </Link>
                     </div>
                 </div>
-            </div>
+            </header>
 
-            {/* Store Info */}
-            <div className="bg-white -mt-6 rounded-t-3xl relative z-10 p-5">
-                <div className="flex justify-between items-start mb-2">
-                    <h1 className="text-2xl font-bold text-gray-900">{(store as any).name}</h1>
-                    <Badge variant="success" className="text-xs shrink-0 ml-2">OPEN</Badge>
-                </div>
+            <main className="max-w-6xl mx-auto px-4 pt-6">
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                    {/* MAIN COLUMN */}
+                    <div className="lg:col-span-8 space-y-8">
+                        {/* HERO IMAGE */}
+                        <div className="relative h-[280px] sm:h-[380px] rounded-[2.5rem] overflow-hidden shadow-2xl shadow-orange-900/10 border-4 border-white group">
+                            <img 
+                                src={(store as any).imageSrc || 'https://images.unsplash.com/photo-1552566626-52f8b828add9?w=1200'} 
+                                alt={(store as any).name} 
+                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-1000" 
+                            />
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-60" />
+                            <div className="absolute bottom-6 left-8 right-8">
+                                <div className="flex items-center gap-3 mb-2">
+                                    <Badge className="bg-green-500 text-white border-none px-3 py-1 text-[10px] font-black uppercase tracking-widest shadow-lg">Open Now</Badge>
+                                    <div className="px-3 py-1 bg-white/20 backdrop-blur-md rounded-full text-white text-[10px] font-black uppercase tracking-widest border border-white/30">
+                                        {(store as any).address?.split(',').pop()?.trim() || 'Food Store'}
+                                    </div>
+                                </div>
+                                <h2 className="text-3xl font-black text-white uppercase italic tracking-tight drop-shadow-xl">{(store as any).name}</h2>
+                            </div>
+                        </div>
 
-                <div className="flex items-center flex-wrap gap-x-4 gap-y-1 text-sm text-gray-500 mb-4">
-                    <span className="flex items-center text-yellow-500 font-bold">
-                        <Star className="w-4 h-4 fill-yellow-500 mr-1" />4.5
-                    </span>
-                    <span className="flex items-center">
-                        <MapPin className="w-4 h-4 mr-1" />{(store as any).address}
-                    </span>
-                    <span className="flex items-center">
-                        <Clock className="w-4 h-4 mr-1" />15-25p
-                    </span>
-                </div>
+                        {/* STORE STATS CARD */}
+                        <div className="bg-white/80 backdrop-blur-xl border border-orange-100/50 rounded-3xl p-6 shadow-xl shadow-orange-900/5 grid grid-cols-3 gap-4">
+                            <div className="text-center space-y-1 group hover:scale-105 transition-transform">
+                                <div className="w-10 h-10 bg-yellow-400/10 rounded-xl flex items-center justify-center mx-auto mb-2">
+                                    <Star className="w-5 h-5 text-yellow-600 fill-yellow-500" />
+                                </div>
+                                <p className="text-lg font-black text-gray-900 leading-none">4.5</p>
+                                <p className="text-[9px] text-gray-400 font-bold uppercase tracking-widest">Đánh giá</p>
+                            </div>
+                            <div className="text-center space-y-1 group hover:scale-105 transition-transform border-x border-orange-50">
+                                <div className="w-10 h-10 bg-[#C76E00]/10 rounded-xl flex items-center justify-center mx-auto mb-2">
+                                    <Clock className="w-5 h-5 text-[#C76E00]" />
+                                </div>
+                                <p className="text-lg font-black text-gray-900 leading-none">15-25p</p>
+                                <p className="text-[9px] text-gray-400 font-bold uppercase tracking-widest">Chuẩn bị</p>
+                            </div>
+                            <div className="text-center space-y-1 group hover:scale-105 transition-transform">
+                                <div className="w-10 h-10 bg-blue-400/10 rounded-xl flex items-center justify-center mx-auto mb-2">
+                                    <MapPin className="w-5 h-5 text-blue-600" />
+                                </div>
+                                <p className="text-[10px] font-black text-gray-900 leading-tight uppercase italic truncate px-2">Grab Food</p>
+                                <p className="text-[9px] text-gray-400 font-bold uppercase tracking-widest">Giao hàng</p>
+                            </div>
+                        </div>
 
-                <hr className="border-gray-100 mb-4" />
+                        {/* MENU SECTION */}
+                        <section className="space-y-6">
+                            <div className="flex items-center gap-4 mb-2 border-l-4 border-[#C76E00] pl-4">
+                                <div>
+                                    <h2 className="text-xl font-black text-gray-900 uppercase tracking-tight italic">Thực đơn</h2>
+                                    <p className="text-[10px] text-gray-400 font-bold uppercase tracking-[0.2em]">{foods.length} món ngon đang chờ bạn</p>
+                                </div>
+                            </div>
 
-                {/* Food Items */}
-                <h2 className="text-lg font-bold text-gray-900 mb-4">🍽️ Thực đơn ({foods.length} món)</h2>
+                            {foods.length === 0 ? (
+                                <div className="py-16 text-center bg-white/50 rounded-3xl border border-dashed border-orange-200">
+                                    <div className="text-4xl mb-4">🍽️</div>
+                                    <p className="text-sm font-black text-gray-400 uppercase tracking-widest">Cửa hàng chưa có món ăn nào</p>
+                                </div>
+                            ) : (
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    {foods.map((item) => (
+                                        <div key={item.id} className="bg-white/80 backdrop-blur-xl border border-orange-100/50 rounded-2xl p-3 shadow-sm hover:shadow-xl hover:shadow-orange-900/5 transition-all group flex gap-4">
+                                            {/* Food Image */}
+                                            <Link to={`/product/${item.id}`} state={{ foodStore: item }} className="shrink-0">
+                                                <div className="w-24 h-24 rounded-2xl overflow-hidden bg-gray-100 shadow-inner">
+                                                    <img
+                                                        src={item.food?.imageSrc || ''}
+                                                        alt={item.food?.name}
+                                                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                                                        onError={e => { (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400&q=80'; }}
+                                                    />
+                                                </div>
+                                            </Link>
 
-                {foods.length === 0 ? (
-                    <p className="text-gray-400 text-center py-8">Cửa hàng chưa có món ăn nào.</p>
-                ) : (
-                    <div className="space-y-3">
-                        {foods.map((item) => (
-                            <div key={item.id} className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-                                <div className="flex items-center gap-3 p-3">
-                                    {/* Food Image */}
-                                    <Link to={`/product/${item.id}`} state={{ foodStore: item }} className="shrink-0">
-                                        <div className="w-20 h-20 rounded-xl overflow-hidden bg-gray-100">
-                                            <img
-                                                src={item.food?.imageSrc || ''}
-                                                alt={item.food?.name}
-                                                className="w-full h-full object-cover"
-                                                onError={e => { (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=300&q=80'; }}
-                                            />
+                                            {/* Info */}
+                                            <div className="flex-1 min-w-0 flex flex-col pt-1 relative">
+                                                <button
+                                                    onClick={(e) => {
+                                                        e.preventDefault();
+                                                        e.stopPropagation();
+                                                        if (item.food?.id) toggleFoodFav(item.food.id, item.food.name || 'Món ăn');
+                                                    }}
+                                                    className={cn(
+                                                        "absolute top-0 right-0 p-1.5 rounded-full transition-all",
+                                                        item.food?.id && favFoodIds.has(item.food.id)
+                                                            ? "text-red-500 bg-red-50"
+                                                            : "text-gray-300 hover:text-gray-400 hover:bg-gray-100"
+                                                    )}
+                                                >
+                                                    <Heart className={cn("w-3.5 h-3.5", item.food?.id && favFoodIds.has(item.food.id) && "fill-current")} />
+                                                </button>
+
+                                                <div>
+                                                    <Link to={`/product/${item.id}`} state={{ foodStore: item }}>
+                                                        <h3 className="font-black text-gray-900 text-xs sm:text-sm uppercase tracking-tight line-clamp-1 group-hover:text-[#C76E00] transition-colors">
+                                                            {item.food?.name}
+                                                        </h3>
+                                                    </Link>
+                                                    <p className="text-[10px] text-gray-400 mt-0.5 line-clamp-1 font-bold uppercase tracking-wider">{item.food?.foodTypeName}</p>
+                                                </div>
+                                                
+                                                <div className="mt-auto flex items-center justify-between">
+                                                    <span className="text-sm sm:text-base font-black text-gray-900 italic">
+                                                        {item.price.toLocaleString()}đ
+                                                    </span>
+                                                    <button
+                                                        onClick={() => addToCart(item)}
+                                                        disabled={isAddingToCart === item.id || item.isAvailable === false}
+                                                        className="flex items-center gap-2 bg-[#C76E00] hover:bg-[#A55B00] disabled:bg-gray-200 text-white text-[10px] font-black uppercase tracking-widest px-4 py-2 rounded-xl transition-all shadow-lg shadow-orange-900/10 active:scale-95"
+                                                    >
+                                                        {isAddingToCart === item.id ? (
+                                                            <span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                                        ) : (
+                                                            <Plus className="w-3.5 h-3.5" />
+                                                        )}
+                                                        Thêm
+                                                    </button>
+                                                </div>
+                                            </div>
                                         </div>
-                                    </Link>
+                                    ))}
+                                </div>
+                            )}
+                        </section>
+                    </div>
 
-                                    {/* Info */}
-                                    <div className="flex-1 min-w-0">
-                                        <Link to={`/product/${item.id}`} state={{ foodStore: item }}>
-                                            <h3 className="font-bold text-gray-900 text-sm truncate hover:text-orange-500 transition-colors">
-                                                {item.food?.name}
-                                            </h3>
-                                        </Link>
-                                        <p className="text-xs text-gray-400 mt-0.5 truncate">{item.food?.foodTypeName}</p>
-                                        {item.size && (
-                                            <p className="text-xs text-gray-400 mt-0.5">Size: {(item.size as any)?.name || ''}</p>
-                                        )}
-                                        <div className="flex items-center justify-between mt-2">
-                                            <span className="text-base font-bold text-orange-600">
-                                                {item.price.toLocaleString()}đ
-                                            </span>
-                                            <button
-                                                onClick={() => addToCart(item)}
-                                                disabled={isAddingToCart === item.id || item.isAvailable === false}
-                                                className="flex items-center gap-1 bg-orange-500 hover:bg-orange-600 disabled:bg-gray-300 text-white text-xs font-bold px-3 py-1.5 rounded-full transition-colors shadow-sm"
-                                            >
-                                                {isAddingToCart === item.id ? (
-                                                    <span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                                                ) : (
-                                                    <Plus className="w-3.5 h-3.5" />
-                                                )}
-                                                Thêm
-                                            </button>
-                                        </div>
+                    {/* SIDEBAR COLUMN */}
+                    <aside className="lg:col-span-4 space-y-8">
+                        {/* ADDRESS CARD */}
+                        <div className="bg-[#1A1A1A] rounded-[2.5rem] p-8 shadow-2xl shadow-orange-900/20 text-white relative overflow-hidden">
+                            <div className="absolute top-0 right-0 w-32 h-32 bg-[#C76E00]/10 rounded-full blur-3xl" />
+                            <div className="relative z-10 space-y-6">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 bg-[#C76E00] rounded-xl flex items-center justify-center shadow-lg shadow-orange-900/20">
+                                        <MapPin className="w-5 h-5 text-white" />
+                                    </div>
+                                    <div>
+                                        <p className="text-[9px] text-orange-400 font-bold uppercase tracking-widest mb-0.5">Vị trí quán</p>
+                                        <h4 className="text-sm font-black text-white italic line-clamp-2">{(store as any).address}</h4>
+                                    </div>
+                                </div>
+                                <button className="w-full bg-white/5 hover:bg-white/10 border border-white/10 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all">
+                                    Chỉ đường tới quán
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* REVIEWS CARD */}
+                        <div className="bg-white/80 backdrop-blur-xl border border-orange-100/50 rounded-[2.5rem] p-8 shadow-xl shadow-orange-900/5 space-y-6">
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <h3 className="text-lg font-black text-gray-900 uppercase tracking-tight italic">Đánh giá</h3>
+                                    <p className="text-[9px] text-gray-400 font-bold uppercase tracking-widest">{reviews.length} nhận xét từ khách hàng</p>
+                                </div>
+                                <div className="text-right">
+                                    <div className="text-2xl font-black text-[#C76E00] leading-none italic">4.5</div>
+                                    <div className="flex mt-1">
+                                        {[1,2,3,4,5].map(i => <Star key={i} className="w-2.5 h-2.5 fill-yellow-500 text-yellow-500" />)}
                                     </div>
                                 </div>
                             </div>
-                        ))}
-                    </div>
-                )}
+                            
+                            <hr className="border-orange-50" />
 
-                {/* Reviews Section */}
-                <hr className="border-gray-100 my-6" />
-                <h2 className="text-lg font-bold text-gray-900 mb-4">⭐ Đánh giá ({reviews.length})</h2>
-
-                {reviews.length === 0 ? (
-                    <p className="text-gray-400 text-center py-6">Chưa có đánh giá nào.</p>
-                ) : (
-                    <div className="space-y-3">
-                        {reviews.slice(0, 10).map((r: any, idx: number) => (
-                            <Card key={r.id || idx} className="p-4 border-none shadow-sm rounded-xl">
-                                <div className="flex items-start gap-3">
-                                    <div className="w-8 h-8 rounded-full bg-orange-100 flex items-center justify-center text-orange-600 font-bold text-sm shrink-0">
-                                        {(r.userName || r.user?.name || 'U').charAt(0).toUpperCase()}
-                                    </div>
-                                    <div className="flex-1">
-                                        <div className="flex items-center gap-2 mb-0.5">
-                                            <span className="text-sm font-bold text-gray-900">{r.userName || r.user?.name || 'Người dùng'}</span>
-                                            <span className="text-yellow-500 text-xs flex items-center">
-                                                {Array.from({ length: r.rating || r.star || 0 }).map((_, i) => (
-                                                    <Star key={i} className="w-3 h-3 fill-yellow-500" />
-                                                ))}
-                                            </span>
-                                        </div>
-                                        <p className="text-xs text-gray-600">{r.comment || r.content}</p>
-                                        {r.reply && (
-                                            <div className="mt-2 bg-gray-50 rounded-lg p-2">
-                                                <p className="text-[10px] text-gray-400 font-bold">Phản hồi:</p>
-                                                <p className="text-xs text-gray-600">{r.reply}</p>
+                            <div className="space-y-6">
+                                {reviews.length === 0 ? (
+                                    <p className="text-xs text-gray-400 text-center py-4 font-bold uppercase tracking-widest italic">Chưa có đánh giá nào</p>
+                                ) : (
+                                    reviews.slice(0, 5).map((r: any, idx: number) => (
+                                        <div key={r.id || idx} className="space-y-2">
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-8 h-8 rounded-full bg-orange-100 flex items-center justify-center text-[#C76E00] font-black text-[10px] shrink-0">
+                                                    {(r.userName || r.user?.name || 'U').charAt(0).toUpperCase()}
+                                                </div>
+                                                <div className="min-w-0 flex-1">
+                                                    <div className="flex items-center justify-between">
+                                                        <span className="text-[10px] font-black text-gray-900 uppercase tracking-tight">
+                                                            {r.userName || r.user?.name || 'Khách hàng'}
+                                                        </span>
+                                                        <span className="text-[9px] text-gray-400 font-bold">
+                                                            {new Date(r.createdAt || r.date || Date.now()).toLocaleDateString('vi-VN')}
+                                                        </span>
+                                                    </div>
+                                                    <div className="flex gap-0.5">
+                                                        {Array.from({ length: r.rating || r.star || 5 }).map((_, i) => (
+                                                            <Star key={i} className="w-2 h-2 fill-yellow-500 text-yellow-500" />
+                                                        ))}
+                                                    </div>
+                                                </div>
                                             </div>
-                                        )}
-                                        <p className="text-[10px] text-gray-400 mt-1">
-                                            {new Date(r.createdAt || r.date || Date.now()).toLocaleDateString('vi-VN')}
-                                        </p>
-                                    </div>
-                                </div>
-                            </Card>
-                        ))}
-                    </div>
-                )}
-            </div>
+                                            <p className="text-[11px] text-gray-600 font-medium leading-relaxed pl-11">
+                                                {r.comment || r.content}
+                                            </p>
+                                        </div>
+                                    ))
+                                )}
+                            </div>
+                            
+                            {reviews.length > 5 && (
+                                <button className="w-full text-[10px] font-black text-[#C76E00] uppercase tracking-widest hover:underline pt-2">
+                                    Xem tất cả đánh giá
+                                </button>
+                            )}
+                        </div>
+                    </aside>
+                </div>
+            </main>
 
             {/* Cross-store conflict dialog - same as Flutter */}
             <Modal

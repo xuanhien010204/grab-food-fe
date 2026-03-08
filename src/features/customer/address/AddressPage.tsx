@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { ArrowLeft, MapPin, Plus, Star, Phone, Check, Loader2, Home, Edit2, Trash2 } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { addressApi } from '../../../api/api';
 import { Button } from '../../../components/ui/Button';
@@ -21,6 +21,7 @@ interface AddressItem {
 }
 
 export default function AddressPage() {
+    const navigate = useNavigate();
     const [addresses, setAddresses] = useState<AddressItem[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [showAddForm, setShowAddForm] = useState(false);
@@ -139,27 +140,34 @@ export default function AddressPage() {
     };
 
     return (
-        <div className="pb-24 bg-gray-50 min-h-screen">
+        <div className="pb-24 bg-[#FCF9F5] min-h-screen font-sans">
             {/* Header */}
-            <div className="bg-gradient-to-br from-orange-500 via-orange-600 to-red-500 rounded-b-[2rem] shadow-xl p-6 pt-10 text-white">
-                <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center gap-3">
-                        <Link to="/" className="bg-white/20 backdrop-blur-md p-2 rounded-full hover:bg-white/30 transition-colors">
-                            <ArrowLeft className="w-5 h-5" />
-                        </Link>
-                        <h1 className="text-xl font-bold">Địa chỉ giao hàng</h1>
+            <div className="sticky top-0 z-30 bg-white/80 backdrop-blur-md border-b border-orange-100/50 px-4 py-4 mb-8">
+                <div className="max-w-4xl mx-auto flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                        <button onClick={() => navigate(-1)} className="p-2 hover:bg-orange-50 rounded-xl transition-colors">
+                            <ArrowLeft className="w-5 h-5 text-[#C76E00]" />
+                        </button>
+                        <div>
+                            <h1 className="text-xl font-black text-gray-900 tracking-tight uppercase italic flex items-center gap-2">
+                                <MapPin className="w-5 h-5 text-[#C76E00]" />
+                                Địa chỉ
+                            </h1>
+                            <p className="text-[10px] text-gray-400 font-bold uppercase tracking-[0.2em] mt-0.5">
+                                Quản lý địa chỉ giao hàng
+                            </p>
+                        </div>
                     </div>
                     <button
                         onClick={() => setShowAddForm(true)}
-                        className="bg-white/20 backdrop-blur-md p-2 rounded-full hover:bg-white/30 transition-colors"
+                        className="p-2 bg-white shadow-sm border border-orange-100/30 rounded-xl text-[#C76E00] hover:bg-orange-50 transition-all active:scale-95"
                     >
                         <Plus className="w-5 h-5" />
                     </button>
                 </div>
-                <p className="text-xs text-white/70 ml-12">Quản lý các địa chỉ nhận hàng của bạn</p>
             </div>
 
-            <div className="px-4 mt-6">
+            <div className="max-w-4xl mx-auto px-4 sm:px-6 mt-8">
                 {/* Add Address Form */}
                 {showAddForm && (
                     <Card className="border-none shadow-md p-5 mb-6 rounded-2xl bg-white space-y-4">
@@ -206,7 +214,7 @@ export default function AddressPage() {
                                 Huỷ
                             </Button>
                             <Button
-                                className="flex-1 rounded-xl shadow-md shadow-orange-200"
+                                className="flex-1 rounded-xl shadow-md shadow-orange-200 bg-[#C76E00] hover:bg-[#A55B00]"
                                 onClick={editing ? handleUpdate : handleAddAddress}
                                 disabled={isSubmitting}
                             >

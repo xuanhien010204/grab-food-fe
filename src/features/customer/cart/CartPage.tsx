@@ -1,4 +1,4 @@
-import { Minus, Plus, Trash2, MapPin, ShoppingBag, CreditCard, Tag, Ticket, ChevronRight, Loader2, Wallet, Banknote, ArrowLeft } from 'lucide-react';
+import { Minus, Plus, Trash2, MapPin, ShoppingBag, CreditCard, Ticket, ChevronRight, Loader2, ArrowLeft, MessageSquare } from 'lucide-react';
 import { Button } from '../../../components/ui/Button';
 import { Card } from '../../../components/ui/Card';
 import { Badge } from '../../../components/ui/Badge';
@@ -12,21 +12,19 @@ import { orderApi, voucherApi, addressApi, walletApi } from '../../../api/api';
 import { cartStore } from '../../../utils/cartStore';
 
 const PAYMENT_METHODS = [
-    { id: 2, name: 'Tiền mặt', icon: Banknote, desc: 'Thanh toán khi nhận hàng' },
-    { id: 1, name: 'Ví GrabFood', icon: Wallet, desc: 'Thanh toán bằng số dư ví' },
+    { id: 3, name: 'MoMo', icon: CreditCard, desc: 'Thanh toán qua ứng dụng MoMo' },
 ];
 
 export default function CartPage() {
     const navigate = useNavigate();
     const [cartItems, setCartItems] = useState<any[]>([]);
-    const [vouchers, setVouchers] = useState<any[]>([]);
     const [selectedVoucher, setSelectedVoucher] = useState<any>(null);
     const [voucherCode, setVoucherCode] = useState('');
     const [voucherError, setVoucherError] = useState('');
     const [isLoading, setIsLoading] = useState(true);
     const [isCheckingOut, setIsCheckingOut] = useState(false);
     const [defaultAddress, setDefaultAddress] = useState<any>(null);
-    const [paymentMethod, setPaymentMethod] = useState(2);
+    const [paymentMethod, setPaymentMethod] = useState(3);
     const [walletBalance, setWalletBalance] = useState(0);
     const [orderNote, setOrderNote] = useState('');
     const [showConfirm, setShowConfirm] = useState(false);
@@ -71,11 +69,7 @@ export default function CartPage() {
     };
 
     const fetchVouchers = async () => {
-        try {
-            const res = await voucherApi.getActive().catch(() => ({ data: [] }));
-            const data = res.data;
-            setVouchers(Array.isArray(data) ? data : (data as any)?.vouchers || []);
-        } catch { }
+        // Vouchers fetched but not explicitly listed in this version to keep layout clean
     };
 
     const refreshCart = () => {
@@ -234,268 +228,263 @@ export default function CartPage() {
     const storeName = cartItems[0]?.foodStore?.store?.name || cartItems[0]?.foodStore?.Store?.Name || 'Cửa hàng';
 
     return (
-        <div className="bg-gray-50 min-h-screen pb-40">
+        <div className="bg-[#FCF9F5] min-h-screen pb-20">
             {/* Header */}
-            <div className="bg-white sticky top-0 z-30 border-b border-gray-100 px-4 py-3 flex items-center gap-3">
-                <button onClick={() => navigate(-1)} className="p-1">
-                    <ArrowLeft className="w-5 h-5 text-gray-700" />
-                </button>
-                <div className="flex-1">
-                    <h1 className="text-lg font-bold text-gray-900">Giỏ hàng</h1>
-                    <p className="text-xs text-gray-400">{storeName} · {cartItems.length} món</p>
-                </div>
-                <div className="w-10 h-10 bg-orange-50 rounded-xl flex items-center justify-center">
-                    <ShoppingBag className="w-5 h-5 text-orange-500" />
+            <div className="sticky top-0 z-30 bg-white/80 backdrop-blur-md border-b border-orange-100/50 px-4 py-4 mb-6">
+                <div className="max-w-6xl mx-auto flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                        <button onClick={() => navigate(-1)} className="p-2 hover:bg-orange-50 rounded-xl transition-colors">
+                            <ArrowLeft className="w-5 h-5 text-[#C76E00]" />
+                        </button>
+                        <div>
+                            <h1 className="text-xl font-black text-gray-900 tracking-tight uppercase italic flex items-center gap-2">
+                                <ShoppingBag className="w-5 h-5 text-[#C76E00]" />
+                                Giỏ hàng
+                            </h1>
+                            <p className="text-[10px] text-gray-400 font-bold uppercase tracking-[0.2em] mt-0.5">
+                                {storeName} · {cartItems.length} món
+                            </p>
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            <div className="p-4 space-y-6">
-                {/* Cart Items */}
-                <div className="space-y-3">
-                    {cartItems.map((item) => (
-                        <Card key={item.id} className="p-3 border-none shadow-sm hover:shadow-md transition-all duration-300">
-                            <div className="flex space-x-3">
-                                <div className="relative">
-                                    <img src={item.image} alt={item.name} className="w-20 h-20 rounded-2xl object-cover shadow-sm"
-                                        onError={e => { (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500&q=80'; }}
-                                    />
-                                    <Badge className="absolute -top-2 -right-2 bg-orange-600 border-2 border-white text-xs">{item.quantity}</Badge>
-                                </div>
-                                <div className="flex-1 flex flex-col justify-between min-w-0">
-                                    <div>
-                                        <div className="flex justify-between items-start">
-                                            <h3 className="font-bold text-gray-900 text-sm leading-tight truncate pr-2">{item.name}</h3>
-                                            <button className="text-gray-300 hover:text-red-500 transition-colors shrink-0" onClick={() => removeItem(item.id)}>
-                                                <Trash2 className="w-4 h-4" />
-                                            </button>
+            <div className="max-w-6xl mx-auto px-4">
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+                    {/* LEFT COLUMN: Items */}
+                    <div className="lg:col-span-7 space-y-6">
+                        <div className="flex items-center gap-2 px-2">
+                            <div className="w-1 h-4 bg-[#C76E00] rounded-full" />
+                            <h2 className="text-sm font-black text-gray-900 uppercase tracking-widest italic">Danh sách món ăn</h2>
+                        </div>
+                        
+                        <div className="space-y-4">
+                            {cartItems.map((item) => (
+                                <Card key={item.id} className="p-4 bg-white/80 backdrop-blur-xl border border-orange-100/50 shadow-xl shadow-orange-900/5 rounded-3xl transition-all hover:shadow-2xl hover:shadow-orange-900/10 group">
+                                    <div className="flex gap-4">
+                                        <div className="relative shrink-0">
+                                            <div className="w-24 h-24 rounded-2xl overflow-hidden border border-orange-100/30 group-hover:rotate-2 transition-transform shadow-inner">
+                                                <img src={item.image} alt={item.name} className="w-full h-full object-cover transition-transform group-hover:scale-110 duration-500"
+                                                    onError={e => { (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500&q=80'; }}
+                                                />
+                                            </div>
+                                            <div className="absolute -top-2 -right-2 bg-[#C76E00] text-white w-7 h-7 rounded-lg flex items-center justify-center text-xs font-black shadow-lg shadow-orange-200 border-2 border-white">
+                                                {item.quantity}
+                                            </div>
                                         </div>
-                                        {item.foodStore?.size && (
-                                            <p className="text-[10px] text-gray-400 mt-0.5">Size: {item.foodStore.size?.name || ''}</p>
-                                        )}
-                                    </div>
+                                        
+                                        <div className="flex-1 flex flex-col justify-between min-w-0">
+                                            <div>
+                                                <div className="flex justify-between items-start">
+                                                    <h3 className="font-black text-gray-900 text-sm tracking-tight truncate group-hover:text-[#C76E00] transition-colors">{item.name}</h3>
+                                                    <button className="text-gray-300 hover:text-red-500 transition-colors p-1" onClick={() => removeItem(item.id)}>
+                                                        <Trash2 className="w-4 h-4" />
+                                                    </button>
+                                                </div>
+                                                {item.foodStore?.size && (
+                                                    <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-1">Size: {item.foodStore.size?.name || ''}</p>
+                                                )}
+                                            </div>
 
-                                    <div className="flex justify-between items-center mt-2">
-                                        <span className="font-extrabold text-orange-600">{(item.price * item.quantity).toLocaleString()}đ</span>
-                                        <div className="flex items-center bg-gray-50 rounded-xl p-1 border border-gray-100">
-                                            <button onClick={() => updateQuantity(item.id, -1)} className="w-7 h-7 rounded-lg flex items-center justify-center text-gray-400 hover:text-orange-600 hover:bg-white transition-all">
-                                                <Minus className="w-3.5 h-3.5" />
-                                            </button>
-                                            <span className="text-sm font-bold w-7 text-center text-gray-900">{item.quantity}</span>
-                                            <button onClick={() => updateQuantity(item.id, 1)} className="w-7 h-7 rounded-lg flex items-center justify-center text-gray-400 hover:text-orange-600 hover:bg-white transition-all">
-                                                <Plus className="w-3.5 h-3.5" />
-                                            </button>
+                                            <div className="flex justify-between items-center mt-3">
+                                                <span className="font-black text-[#C76E00] text-base tracking-tight">{(item.price * item.quantity).toLocaleString()} ₫</span>
+                                                <div className="flex items-center bg-orange-50/50 rounded-xl p-1 border border-orange-100/30">
+                                                    <button onClick={() => updateQuantity(item.id, -1)} className="w-8 h-8 rounded-lg flex items-center justify-center text-[#C76E00] hover:bg-white hover:shadow-sm transition-all active:scale-95">
+                                                        <Minus className="w-4 h-4" />
+                                                    </button>
+                                                    <span className="text-sm font-black w-8 text-center text-gray-900">{item.quantity}</span>
+                                                    <button onClick={() => updateQuantity(item.id, 1)} className="w-8 h-8 rounded-lg flex items-center justify-center text-[#C76E00] hover:bg-white hover:shadow-sm transition-all active:scale-95">
+                                                        <Plus className="w-4 h-4" />
+                                                    </button>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
+                                </Card>
+                            ))}
+                        </div>
+
+                        {/* Order Note */}
+                        <Card className="p-5 bg-white/80 backdrop-blur-xl border border-orange-100/50 shadow-xl shadow-orange-900/5 rounded-3xl space-y-3">
+                            <div className="flex items-center gap-2">
+                                <MessageSquare className="w-4 h-4 text-[#C76E00]" />
+                                <span className="text-xs font-black text-gray-900 uppercase tracking-widest italic">Ghi chú đơn hàng</span>
                             </div>
+                            <textarea
+                                className="w-full bg-orange-50/30 border border-orange-100/50 rounded-2xl p-4 text-sm resize-none outline-none focus:ring-2 focus:ring-[#C76E00]/20 placeholder-gray-300 font-medium italic transition-all"
+                                rows={2}
+                                value={orderNote}
+                                onChange={e => setOrderNote(e.target.value)}
+                                placeholder="Dặn dò tài xế hoặc nhà hàng nhé..."
+                            />
                         </Card>
-                    ))}
-                </div>
-
-                {/* Address Section */}
-                <div className="space-y-2">
-                    <div className="flex items-center space-x-2 text-gray-900 font-bold">
-                        <MapPin className="w-4 h-4 text-orange-600" />
-                        <span className="text-sm">Địa chỉ giao hàng</span>
                     </div>
-                    <Link to="/addresses" className="block">
-                        <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex items-center justify-between hover:shadow-md transition-shadow">
-                            <div className="flex items-center gap-3 flex-1 min-w-0">
-                                <div className={cn(
-                                    "w-10 h-10 rounded-xl flex items-center justify-center shrink-0",
-                                    defaultAddress ? "bg-orange-500 text-white" : "bg-gray-100 text-gray-400"
-                                )}>
-                                    <MapPin className="w-5 h-5" />
-                                </div>
-                                {defaultAddress ? (
-                                    <div className="min-w-0">
-                                        <p className="text-sm font-bold text-gray-900 truncate">
-                                            {defaultAddress.recipientName}
-                                            {defaultAddress.phone ? ` · ${defaultAddress.phone}` : ''}
-                                        </p>
-                                        <p className="text-xs text-gray-500 truncate">
-                                            {defaultAddress.address}{defaultAddress.addressDetail ? `, ${defaultAddress.addressDetail}` : ''}
-                                        </p>
+
+                    {/* RIGHT COLUMN: Summary & Details */}
+                    <div className="lg:col-span-5 space-y-6 lg:sticky lg:top-28">
+                        {/* Delivery Address */}
+                        <div className="space-y-3">
+                            <div className="flex items-center gap-2 px-2 text-[#C76E00]">
+                                <MapPin className="w-4 h-4" />
+                                <span className="text-xs font-black uppercase tracking-widest italic">Địa chỉ giao hàng</span>
+                            </div>
+                            <Link to="/addresses">
+                                <Card className="p-4 bg-white/80 backdrop-blur-xl border border-orange-100/50 shadow-xl shadow-orange-900/5 rounded-3xl group transition-all hover:bg-white hover:-translate-y-1">
+                                    <div className="flex items-center gap-4">
+                                        <div className={cn(
+                                            "w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 transition-transform group-hover:rotate-6",
+                                            defaultAddress ? "bg-orange-50 text-[#C76E00]" : "bg-gray-50 text-gray-300"
+                                        )}>
+                                            <MapPin className="w-6 h-6" />
+                                        </div>
+                                        {defaultAddress ? (
+                                            <div className="flex-1 min-w-0">
+                                                <p className="text-sm font-black text-gray-900 truncate uppercase tracking-tight">
+                                                    {defaultAddress.recipientName}
+                                                    {defaultAddress.phone ? ` · ${defaultAddress.phone}` : ''}
+                                                </p>
+                                                <p className="text-[11px] text-gray-500 font-medium italic truncate mt-0.5 opacity-80">
+                                                    {defaultAddress.address}{defaultAddress.addressDetail ? `, ${defaultAddress.addressDetail}` : ''}
+                                                </p>
+                                            </div>
+                                        ) : (
+                                            <div className="flex-1">
+                                                <p className="text-sm font-black text-red-500 uppercase tracking-tight italic">Chưa có địa chỉ</p>
+                                                <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-0.5">Nhấp để thêm ngay</p>
+                                            </div>
+                                        )}
+                                        <ChevronRight className="w-5 h-5 text-gray-300" />
                                     </div>
-                                ) : (
-                                    <div>
-                                        <p className="text-sm font-medium text-red-500">Chưa có địa chỉ giao hàng</p>
-                                        <p className="text-xs text-gray-400">Nhấn để thêm địa chỉ</p>
+                                </Card>
+                            </Link>
+                        </div>
+
+                        {/* Payment Method */}
+                        <div className="space-y-3">
+                            <div className="flex items-center gap-2 px-2 text-[#C76E00]">
+                                <CreditCard className="w-4 h-4" />
+                                <span className="text-xs font-black uppercase tracking-widest italic">Thanh toán</span>
+                            </div>
+                            <Card className="bg-white/80 backdrop-blur-xl border border-orange-100/50 shadow-xl shadow-orange-900/5 rounded-3xl overflow-hidden">
+                                {PAYMENT_METHODS.map((method) => {
+                                    const Icon = method.icon;
+                                    const isSelected = paymentMethod === method.id;
+                                    return (
+                                        <button
+                                        key={method.id}
+                                        onClick={() => setPaymentMethod(method.id)}
+                                        className={cn(
+                                            "w-full flex items-center gap-4 p-5 text-left transition-all border-[#C76E00] bg-orange-50/70",
+                                            isSelected ? "border-l-4" : ""
+                                        )}
+                                    >
+                                            <div className={cn(
+                                                "w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 bg-[#C76E00] text-white shadow-lg shadow-orange-200"
+                                            )}>
+                                                <Icon className="w-6 h-6" />
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                                <p className="text-sm font-black uppercase tracking-tight text-[#C76E00]">
+                                                    {method.name}
+                                                </p>
+                                                <p className="text-[10px] text-gray-400 font-bold italic opacity-70">{method.desc}</p>
+                                            </div>
+                                            <div className="w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 border-[#C76E00] bg-[#C76E00]">
+                                                <div className="w-2.5 h-2.5 bg-white rounded-full" />
+                                            </div>
+                                        </button>
+                                    );
+                                })}
+                            </Card>
+                        </div>
+
+                        {/* Order Summary Card */}
+                        <Card className="p-6 bg-white/80 backdrop-blur-xl border border-orange-100/50 shadow-2xl shadow-orange-900/10 rounded-3xl space-y-5 relative overflow-hidden">
+                            <div className="absolute top-0 right-0 w-32 h-32 bg-orange-100/20 rounded-full -mr-16 -mt-16 blur-2xl pointer-events-none" />
+                            
+                            <div className="space-y-3 relative z-10">
+                                <div className="flex justify-between items-center group">
+                                    <span className="text-[11px] font-black text-gray-400 uppercase tracking-widest">Tạm tính ({cartItems.reduce((s, i) => s + i.quantity, 0)} món)</span>
+                                    <span className="text-sm font-black text-gray-900">{subtotal.toLocaleString()} ₫</span>
+                                </div>
+                                <div className="flex justify-between items-center">
+                                    <span className="text-[11px] font-black text-gray-400 uppercase tracking-widest">Phí giao hàng</span>
+                                    <span className="text-sm font-black text-gray-900">{shippingFee.toLocaleString()} ₫</span>
+                                </div>
+
+                                {/* Voucher Select Component integrated more beautifully */}
+                                <div className="pt-2">
+                                    <button onClick={() => setVoucherCode('')} className="w-full flex items-center justify-between p-3 rounded-2xl bg-orange-50/50 border border-orange-100/50 hover:bg-orange-100/50 transition-all group">
+                                        <div className="flex items-center gap-2">
+                                            <Ticket className="w-4 h-4 text-[#C76E00]" />
+                                            <span className="text-[10px] font-black text-[#C76E00] uppercase tracking-widest">Ưu đãi giảm giá</span>
+                                        </div>
+                                        {selectedVoucher ? (
+                                            <div className="flex items-center gap-2">
+                                                <Badge className="bg-[#C76E00] text-white text-[9px] font-black px-2">{selectedVoucher.code}</Badge>
+                                                <button onClick={(e) => { e.stopPropagation(); setSelectedVoucher(null); }} className="text-gray-300 hover:text-red-500">
+                                                    <Trash2 className="w-3 h-3" />
+                                                </button>
+                                            </div>
+                                        ) : (
+                                            <ChevronRight className="w-4 h-4 text-gray-300 group-hover:translate-x-1 transition-transform" />
+                                        )}
+                                    </button>
+                                    
+                                    {!selectedVoucher && (
+                                        <div className="mt-3 flex gap-2">
+                                            <Input
+                                                placeholder="Nhập mã..."
+                                                value={voucherCode}
+                                                onChange={(e) => { setVoucherCode(e.target.value); setVoucherError(''); }}
+                                                className="h-9 text-[11px] rounded-xl bg-white/50 border-orange-100 focus:ring-[#C76E00] transition-all"
+                                            />
+                                            <Button size="sm" className="h-9 px-4 rounded-xl text-[10px] font-black uppercase tracking-widest bg-[#C76E00]" onClick={handleApplyVoucherCode}>
+                                                Dùng
+                                            </Button>
+                                        </div>
+                                    )}
+                                    {voucherError && <p className="text-[9px] text-red-500 font-bold mt-1 px-1">{voucherError}</p>}
+                                </div>
+
+                                {discount > 0 && (
+                                    <div className="flex justify-between items-center pt-2 text-emerald-600 animate-fade-in">
+                                        <span className="text-[11px] font-black uppercase tracking-widest flex items-center gap-1">
+                                            <Ticket className="w-3.5 h-3.5" /> Giảm giá
+                                        </span>
+                                        <span className="text-sm font-black">-{discount.toLocaleString()} ₫</span>
                                     </div>
                                 )}
                             </div>
-                            <ChevronRight className="w-5 h-5 text-gray-400 shrink-0" />
-                        </div>
-                    </Link>
-                </div>
 
-                {/* Payment Method */}
-                <div className="space-y-2">
-                    <div className="flex items-center space-x-2 text-gray-900 font-bold">
-                        <CreditCard className="w-4 h-4 text-orange-600" />
-                        <span className="text-sm">Phương thức thanh toán</span>
-                    </div>
-                    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-                        {PAYMENT_METHODS.map((method) => {
-                            const Icon = method.icon;
-                            const isSelected = paymentMethod === method.id;
-                            return (
-                                <button
-                                    key={method.id}
-                                    onClick={() => setPaymentMethod(method.id)}
-                                    className={cn(
-                                        "w-full flex items-center gap-3 p-4 text-left transition-colors border-b border-gray-50 last:border-b-0",
-                                        isSelected ? "bg-orange-50" : "hover:bg-gray-50"
-                                    )}
-                                >
-                                    <div className={cn(
-                                        "w-10 h-10 rounded-xl flex items-center justify-center shrink-0",
-                                        isSelected ? "bg-orange-500 text-white shadow-md" : "bg-gray-100 text-gray-400"
-                                    )}>
-                                        <Icon className="w-5 h-5" />
+                            <div className="pt-5 border-t-2 border-dashed border-orange-100/50 relative z-10">
+                                <div className="flex justify-between items-center mb-6">
+                                    <div>
+                                        <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest mb-1">Tổng thanh toán</p>
+                                        <p className="text-3xl font-black text-[#C76E00] tracking-tighter shadow-orange-100">{total.toLocaleString()} ₫</p>
                                     </div>
-                                    <div className="flex-1 min-w-0">
-                                        <p className={cn("text-sm font-bold", isSelected ? "text-orange-600" : "text-gray-900")}>
-                                            {method.name}
-                                        </p>
-                                        <p className="text-xs text-gray-400">{method.desc}</p>
-                                        {method.id === 1 && (
-                                            <p className="text-xs text-emerald-500 font-medium mt-0.5">
-                                                Số dư: {walletBalance.toLocaleString()}đ
-                                            </p>
-                                        )}
+                                    <div className="text-right">
+                                        <Badge variant="outline" className="text-[8px] font-black uppercase tracking-widest border-orange-200 text-[#C76E00]">
+                                            {PAYMENT_METHODS.find(m => m.id === paymentMethod)?.name}
+                                        </Badge>
                                     </div>
-                                    <div className={cn(
-                                        "w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0",
-                                        isSelected ? "border-orange-500 bg-orange-500" : "border-gray-300"
-                                    )}>
-                                        {isSelected && <div className="w-2 h-2 bg-white rounded-full" />}
-                                    </div>
-                                </button>
-                            );
-                        })}
-                    </div>
-                </div>
-
-                {/* Voucher Section */}
-                <div className="space-y-2">
-                    <div className="flex items-center space-x-2 text-gray-900 font-bold">
-                        <Tag className="w-4 h-4 text-orange-600" />
-                        <span className="text-sm">Ưu đãi giảm giá</span>
-                    </div>
-
-                    <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 space-y-3">
-                        <div className="flex gap-2">
-                            <Input
-                                placeholder="Nhập mã giảm giá..."
-                                value={voucherCode}
-                                onChange={(e) => { setVoucherCode(e.target.value); setVoucherError(''); }}
-                                className="rounded-xl text-sm flex-1"
-                            />
-                            <Button size="sm" className="rounded-xl px-4 shrink-0" onClick={handleApplyVoucherCode}>
-                                Áp dụng
-                            </Button>
-                        </div>
-                        {voucherError && <p className="text-xs text-red-500">{voucherError}</p>}
-
-                        {selectedVoucher && (
-                            <div className="flex items-center justify-between p-3 rounded-xl border border-orange-200 bg-orange-50">
-                                <div className="flex items-center gap-2">
-                                    <Ticket className="w-4 h-4 text-orange-500" />
-                                    <span className="text-sm font-bold text-orange-600">
-                                        {selectedVoucher.code || selectedVoucher.title || 'Voucher'}
-                                    </span>
                                 </div>
-                                <button onClick={() => setSelectedVoucher(null)} className="text-xs text-gray-400 hover:text-red-500">
-                                    Bỏ
-                                </button>
-                            </div>
-                        )}
 
-                        {!selectedVoucher && vouchers.length > 0 && (
-                            <div className="space-y-2">
-                                <p className="text-xs text-gray-400">Voucher có sẵn:</p>
-                                {vouchers.slice(0, 3).map(v => (
-                                    <button
-                                        key={v.id}
-                                        onClick={() => setSelectedVoucher(v)}
-                                        className="w-full flex items-center justify-between p-3 rounded-xl border border-gray-100 bg-gray-50/50 hover:border-orange-300 hover:bg-orange-50 transition-all text-left"
-                                    >
-                                        <div className="flex items-center space-x-3">
-                                            <div className="w-9 h-9 bg-white rounded-lg flex items-center justify-center shadow-sm">
-                                                <Ticket className="w-4 h-4 text-orange-600" />
-                                            </div>
-                                            <div>
-                                                <p className="text-xs font-bold text-gray-900">{v.title || v.code || v.name}</p>
-                                                <p className="text-[10px] text-gray-500">
-                                                    Giảm {(v.discountValue || v.value)?.toLocaleString()}{(v.voucherType === 1 || v.discountType === 'percentage') ? '%' : 'đ'}
-                                                </p>
-                                            </div>
-                                        </div>
-                                        <ChevronRight className="w-4 h-4 text-gray-300" />
-                                    </button>
-                                ))}
+                                <Button
+                                    className="w-full py-7 text-sm font-black uppercase tracking-[0.1em] rounded-2xl bg-[#C76E00] hover:bg-[#A55B00] shadow-xl shadow-orange-200 active:scale-95 transition-all text-white border-b-4 border-[#8B4D00]"
+                                    onClick={handleProceedToCheckout}
+                                    disabled={isCheckingOut}
+                                >
+                                    {isCheckingOut ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : null}
+                                    Xác nhận và đặt hàng
+                                </Button>
+                                <p className="text-[9px] text-gray-400 font-bold text-center mt-4 uppercase tracking-[0.2em] italic opacity-60">
+                                    Cam kết giao hàng đúng hẹn
+                                </p>
                             </div>
-                        )}
+                        </Card>
                     </div>
                 </div>
-
-                {/* Order Note */}
-                <div className="space-y-2">
-                    <div className="flex items-center space-x-2 text-gray-900 font-bold">
-                        <span className="text-sm">💬 Ghi chú đơn hàng</span>
-                    </div>
-                    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
-                        <textarea
-                            className="w-full text-sm resize-none outline-none placeholder-gray-300"
-                            rows={2}
-                            value={orderNote}
-                            onChange={e => setOrderNote(e.target.value)}
-                            placeholder="Ghi chú cho tài xế hoặc cửa hàng..."
-                        />
-                    </div>
-                </div>
-
-                {/* Price Summary */}
-                <Card className="p-5 border-none shadow-sm space-y-3 bg-white rounded-2xl">
-                    <div className="flex justify-between text-sm">
-                        <span className="text-gray-400 font-medium">Tạm tính ({cartItems.reduce((s, i) => s + i.quantity, 0)} món)</span>
-                        <span className="font-bold text-gray-900">{subtotal.toLocaleString()}đ</span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                        <span className="text-gray-400 font-medium">Phí giao hàng</span>
-                        <span className="font-bold text-gray-900">{shippingFee.toLocaleString()}đ</span>
-                    </div>
-                    {discount > 0 && (
-                        <div className="flex justify-between text-sm text-emerald-600">
-                            <span className="font-medium flex items-center">
-                                <Ticket className="w-3 h-3 mr-1" /> Giảm giá
-                            </span>
-                            <span className="font-bold">-{discount.toLocaleString()}đ</span>
-                        </div>
-                    )}
-                    <div className="pt-3 border-t border-dashed border-gray-100 flex justify-between items-center">
-                        <div>
-                            <p className="text-[10px] text-gray-400 uppercase tracking-widest font-bold">Tổng thanh toán</p>
-                            <span className="text-2xl font-black text-orange-600">{total.toLocaleString()}đ</span>
-                        </div>
-                        <div className="text-right">
-                            <p className="text-[10px] text-gray-400">{PAYMENT_METHODS.find(m => m.id === paymentMethod)?.name}</p>
-                        </div>
-                    </div>
-                </Card>
-            </div>
-
-            {/* Checkout Button */}
-            <div className="fixed bottom-20 left-4 right-4 z-40">
-                <Button
-                    className="w-full py-6 text-lg font-bold rounded-2xl shadow-2xl shadow-orange-300 transform active:scale-95 transition-transform"
-                    onClick={handleProceedToCheckout}
-                    disabled={isCheckingOut}
-                >
-                    {isCheckingOut ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : null}
-                    ĐẶT HÀNG · {total.toLocaleString()}đ
-                </Button>
             </div>
 
             {/* Confirmation Modal */}

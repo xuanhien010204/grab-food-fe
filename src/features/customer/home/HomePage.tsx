@@ -1,22 +1,34 @@
-import { Search, MapPin, Star, Heart, Clock, ShoppingBag, X, ChevronRight, Utensils } from 'lucide-react';
+import { Search, Star, Clock, ShoppingCart, Utensils, Zap, Salad, Coffee, Pizza, Store, ChevronRight } from 'lucide-react';
 import { Input } from '../../../components/ui/Input';
-import { Card, CardContent } from '../../../components/ui/Card';
 import { Badge } from '../../../components/ui/Badge';
 import { motion } from 'framer-motion';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { cn } from '../../../lib/utils';
 import { Link } from 'react-router-dom';
 import { foodStoreApi, storeApi, foodTypeApi, voucherApi } from '../../../api/api';
 import type { FoodStoreDto, StoreDto } from '../../../types/swagger';
 
-const PROMOTIONS = [
-    { id: 1, title: 'Giảm giá 30% cho đơn đầu', color: 'bg-orange-100' },
-    { id: 2, title: 'Freeship đơn từ 100k', color: 'bg-blue-100' },
-    { id: 3, title: 'Mua 1 tặng 1 trà sữa', color: 'bg-pink-100' },
-];
+const CATEGORY_MAP: Record<string, string> = {
+    'Appetizer': 'Ăn vặt',
+    'Main Course': 'Bún & Phở',
+    'Dessert': 'Bánh ngọt',
+    'Beverage': 'Đồ uống',
+    'Fast Food': 'Nhanh & Tiện',
+    'All': 'Tất cả'
+};
+
+const CATEGORY_ICONS: Record<string, any> = {
+    'Ăn vặt': Zap,
+    'Bún & Phở': Utensils,
+    'Bánh ngọt': Salad,
+    'Đồ uống': Coffee,
+    'Nhanh & Tiện': Pizza,
+    'Tất cả': ShoppingCart
+};
 
 export default function HomePage() {
-    const [activeCategory, setActiveCategory] = useState<number>(1);
+    const [activeCategory, setActiveCategory] = useState<number>(0);
+    const [sortBy, setSortBy] = useState<'nearest' | 'rating' | 'fastest' | 'price'>('nearest');
     const userRole = localStorage.getItem('roleName') || '';
     const [currentBanner, setCurrentBanner] = useState(0);
     const [isLoading, setIsLoading] = useState(true);
@@ -25,54 +37,43 @@ export default function HomePage() {
     const [stores, setStores] = useState<StoreDto[]>([]);
     const [vouchers, setVouchers] = useState<any[]>([]);
     const [searchQuery, setSearchQuery] = useState('');
+    const resultsRef = useRef<HTMLDivElement>(null);
+
+    const handleSearch = () => {
+        if (searchQuery.trim()) {
+            // Scroll to results section with an offset if needed, but start is usually okay
+            resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+    };
+
+    const handleKeyDown = (e: React.KeyboardEvent) => {
+        if (e.key === 'Enter') {
+            handleSearch();
+        }
+    };
+
+    const sortedStores = [...stores].sort((a, b) => {
+        if (sortBy === 'rating') return ((b as any).rating || 0) - ((a as any).rating || 0);
+        if (sortBy === 'fastest') return 20 - 25; // Dummy logic
+        if (sortBy === 'price') return ((a as any).averagePrice || 0) - ((b as any).averagePrice || 0);
+        return 0;
+    });
 
     useEffect(() => {
-        const timer = setInterval(() => {
-            setCurrentBanner((prev) => (prev + 1) % PROMOTIONS.length);
-        }, 4000);
-        return () => clearInterval(timer);
-    }, []);
-
-    useEffect(() => {
-        const fetchData = async () => {
+        const fetchInitialData = async () => {
+            setIsLoading(true);
             try {
-                // Fetch categories first (safest)
-                const catsRes = await foodTypeApi.getAll().catch(() => ({ data: [] }));
-                setCategories(Array.isArray(catsRes.data) ? catsRes.data : []);
-
-                // Fetch other data with individual error handling
-                const [foodsRes, storesRes, vouchersRes] = await Promise.allSettled([
-                    foodStoreApi.getAll({ FoodTypeId: activeCategory === 1 ? undefined : activeCategory }),
-                    storeApi.getAll(),
-                    voucherApi.getAll()
+                const [catsRes, vouchersRes, storesRes] = await Promise.allSettled([
+                    foodTypeApi.getAll(),
+                    voucherApi.getAll(),
+                    storeApi.getAll()
                 ]);
 
-                // Handle foodStores result  
-                if (foodsRes.status === 'fulfilled') {
-                    setFoodStores(Array.isArray(foodsRes.value.data) ? foodsRes.value.data : []);
-                } else {
-                    console.warn('Failed to fetch food stores:', foodsRes.reason);
-                    setFoodStores([]);
-                }
-
-                // Handle stores result
-                if (storesRes.status === 'fulfilled') {
-                    setStores(Array.isArray(storesRes.value.data) ? storesRes.value.data : []);
-                } else {
-                    console.warn('Failed to fetch stores:', storesRes.reason);
-                    setStores([]);
-                }
-
-                // Handle vouchers result with fallback
-                let voucherData = [];
-                if (vouchersRes.status === 'fulfilled') {
-                    voucherData = Array.isArray(vouchersRes.value.data) ? vouchersRes.value.data : [];
-                } else {
-                    console.warn('Failed to fetch vouchers, using fallback:', vouchersRes.reason);
-                }
-
+                if (catsRes.status === 'fulfilled') setCategories(catsRes.value.data || []);
+                if (storesRes.status === 'fulfilled') setStores(storesRes.value.data || []);
+                
+                let voucherData = vouchersRes.status === 'fulfilled' ? (vouchersRes.value.data || []) : [];
                 if (voucherData.length === 0) {
-                    // Fallback to stylized internal promos if API has no vouchers
                     voucherData = [
                         { id: 1, title: 'Giảm giá 30% cho đơn đầu', color: 'bg-orange-50', code: 'GRAB30' },
                         { id: 2, title: 'Freeship đơn từ 100k', color: 'bg-blue-50', code: 'FREESHIP' },
@@ -80,241 +81,297 @@ export default function HomePage() {
                     ];
                 }
                 setVouchers(voucherData);
-
                 setIsLoading(false);
-            } catch (error) {
-                console.error("Failed to fetch data", error);
+            } catch (err) {
+                console.error("Failed to fetch initial data", err);
                 setIsLoading(false);
-                // Don't throw the error to prevent unexpected logout
             }
         };
-        fetchData();
+        fetchInitialData();
+    }, []);
+
+    useEffect(() => {
+        const timer = setInterval(() => {
+            setCurrentBanner((prev) => (prev + 1) % (vouchers.length || 3));
+        }, 4000);
+        return () => clearInterval(timer);
+    }, [vouchers.length]);
+
+    useEffect(() => {
+        const fetchByFilter = async () => {
+            try {
+                const foodsRes = await foodStoreApi.getAll({ 
+                    FoodTypeId: activeCategory === 0 ? undefined : activeCategory 
+                });
+                setFoodStores(foodsRes.data || []);
+            } catch (error) {
+                console.error("Failed to fetch filtered data", error);
+            }
+        };
+        fetchByFilter();
     }, [activeCategory]);
 
     return (
-        <div className="pb-24 bg-gray-50 min-h-screen">
-            {/* HEADER SECTION */}
-            <div className="bg-gradient-to-br from-orange-500 via-orange-600 to-red-500 rounded-b-[2rem] shadow-xl p-6 pt-10 text-white relative z-10">
-                <div className="flex justify-between items-start mb-4">
-                    <div>
-                        <h1 className="text-2xl font-bold">FoodDelivery</h1>
-                        <p className="text-sm opacity-90">Đặt món ngon, giao tận nơi</p>
-                    </div>
-                    <div className="flex items-center space-x-1 bg-white/20 backdrop-blur-sm px-3 py-1 rounded-full text-xs">
-                        <MapPin className="w-3 h-3" />
-                        <span>Hồ Chí Minh</span>
-                    </div>
-                </div>
-
-                <div className="bg-white rounded-xl shadow-lg p-2 flex items-center space-x-2">
-                    <Search className="w-5 h-5 text-gray-400 ml-2" />
-                    <Input
-                        className="border-none shadow-none focus-visible:ring-0 p-0 h-auto placeholder:text-gray-400 text-gray-800"
-                        placeholder="Tìm kiếm món ăn, nhà hàng..."
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                    />
-                    {searchQuery && (
-                        <button onClick={() => setSearchQuery('')} className="mr-2 text-gray-400 hover:text-gray-600">
-                            <X className="w-4 h-4" />
+        <div className="pb-12 bg-[#FCF9F5] min-h-screen">
+            {/* MINI HERO / SEARCH - Distinct Light Orange Tone */}
+            <div className="bg-[#FFE9D1] py-10 sm:py-14 border-b border-orange-100/50 shadow-sm relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -mr-32 -mt-32" />
+                <div className="absolute bottom-0 left-0 w-48 h-48 bg-orange-100/20 rounded-full blur-3xl -ml-24 -mb-24" />
+                
+                <div className="max-w-4xl mx-auto px-4 text-center space-y-6 relative z-10">
+                    <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-gray-900 uppercase italic">
+                        Ăn gì cũng sướng, <span className="text-[#C76E00]">Món gì cũng ngon!</span>
+                    </h1>
+                    
+                    <div className="max-w-xl mx-auto bg-white rounded-2xl shadow-2xl p-1.5 flex items-center gap-2 focus-within:ring-4 focus-within:ring-[#C76E00]/10 transition-all border border-orange-100/30">
+                        <div className="pl-4">
+                            <Search className="w-5 h-5 text-gray-400" />
+                        </div>
+                        <Input
+                            className="border-none shadow-none focus-visible:ring-0 p-0 h-10 text-sm placeholder:text-gray-400 text-gray-900 bg-transparent flex-1 font-medium"
+                            placeholder="Tìm kiếm món ăn, nhà hàng..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            onKeyDown={handleKeyDown}
+                        />
+                        <button 
+                            onClick={handleSearch}
+                            className="bg-[#C76E00] hover:bg-[#A55B00] text-white px-8 py-2.5 rounded-xl font-black transition-all text-[10px] uppercase tracking-widest active:scale-95 shadow-xl shadow-[#C76E00]/20"
+                        >
+                            Tìm Kiếm
                         </button>
-                    )}
+                    </div>
                 </div>
             </div>
 
-            <div className=" px-4 mt-6 space-y-8">
-                {/* PROMOTION BANNER */}
-                <div className="relative overflow-hidden rounded-[2rem] shadow-xl shadow-orange-100 h-48">
+            <div ref={resultsRef} className="max-w-7xl mx-auto px-4 sm:px-6 mt-8 space-y-12 scroll-mt-6">
+                {/* COMPACT PROMOTION */}
+                <div className="relative overflow-hidden rounded-xl shadow-sm h-32 sm:h-40">
                     <motion.div
                         className="flex h-full"
                         animate={{ x: `-${currentBanner * 100}%` }}
-                        transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+                        transition={{ type: 'spring', stiffness: 200, damping: 25 }}
                     >
                         {vouchers.map((promo) => (
-                            <div key={promo.id} className={cn("w-full h-full min-w-full flex items-center justify-between p-8 relative overflow-hidden", promo.color || 'bg-white')}>
-                                <div className="relative z-10 max-w-[60%]">
-                                    <Badge className="bg-orange-600 mb-2 uppercase tracking-tighter shadow-lg shadow-orange-200">Voucher</Badge>
-                                    <h3 className="text-2xl font-black text-gray-900 leading-tight mb-2 italic uppercase tracking-tighter">{promo.title}</h3>
-                                    <div className="flex items-center space-x-2">
-                                        <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Code:</span>
-                                        <code className="bg-white/50 backdrop-blur px-2 py-1 rounded-lg text-orange-600 font-bold border border-orange-100">{promo.code || 'SAVE10'}</code>
+                            <div key={promo.id} className={cn("w-full h-full min-w-full flex items-center justify-between px-8 sm:px-12 relative", promo.color || 'bg-white')}>
+                                <div className="relative z-10 space-y-1">
+                                    <Badge className="bg-[#C76E00] px-2 py-0.5 rounded uppercase text-[8px] font-bold tracking-wider text-white">Ưu đãi</Badge>
+                                    <h3 className="text-lg sm:text-xl font-black text-gray-900 leading-tight">
+                                        {promo.title}
+                                    </h3>
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-[9px] font-bold text-gray-400 uppercase">Sử dụng:</span>
+                                        <code className="bg-[#C76E00]/10 px-2 py-0.5 rounded text-[#C76E00] font-bold border border-[#C76E00]/20 text-[10px]">
+                                            {promo.code || 'FOODDELIVERY'}
+                                        </code>
                                     </div>
                                 </div>
-                                <div className="relative z-10">
-                                    <div className="w-20 h-20 bg-white rounded-3xl flex items-center justify-center shadow-xl rotate-12 transition-transform hover:rotate-0">
-                                        <ShoppingBag className="w-10 h-10 text-orange-600" />
-                                    </div>
+                                <div className="hidden sm:block opacity-10">
+                                    <ShoppingCart className="w-20 h-20 text-orange-600" />
                                 </div>
-                                {/* Decorative elements */}
-                                <div className="absolute top-0 right-0 -mr-10 -mt-10 w-40 h-40 rounded-full bg-orange-200/20 blur-2xl" />
-                                <div className="absolute bottom-0 left-1/2 -ml-20 -mb-20 w-40 h-40 rounded-full bg-blue-200/20 blur-2xl" />
                             </div>
                         ))}
                     </motion.div>
-                    <div className="absolute bottom-4 left-0 right-0 flex justify-center space-x-1.5">
-                        {vouchers.map((_, idx) => (
-                            <div
-                                key={idx}
-                                className={cn("h-1.5 rounded-full transition-all duration-500", currentBanner === idx ? "w-8 bg-orange-600" : "w-1.5 bg-gray-300")}
-                            />
-                        ))}
-                    </div>
-
-                    {/* Floating elements */}
-                    <div className="absolute top-2 left-2 flex space-x-2">
-                        <div className="w-1 h-1 bg-white/20 rounded-full" />
-                        <div className="w-1 h-1 bg-white/20 rounded-full" />
-                    </div>
                 </div>
 
-                {/* CATEGORY PILLS */}
-                <div>
-                    {isLoading ? (
-                        <div className="flex space-x-3 overflow-hidden">
-                            {[1, 2, 3, 4].map(i => <div key={i} className="w-20 h-8 bg-gray-200 rounded-full animate-pulse" />)}
-                        </div>
-                    ) : (
-                        <div className="flex space-x-3 overflow-x-auto pb-2 scrollbar-hide -mx-4 px-4">
-                            {categories.map((cat) => (
+                {/* CATEGORIES */}
+                <section>
+                    <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide -mx-4 px-4 sm:mx-0 sm:px-0">
+                        {[{id: 0, name: 'Tất cả'}, ...categories].map((cat) => {
+                            const displayName = CATEGORY_MAP[cat.name] || cat.name;
+                            const Icon = CATEGORY_ICONS[displayName] || Utensils;
+                            const active = activeCategory === cat.id;
+                            return (
                                 <button
                                     key={cat.id}
                                     onClick={() => setActiveCategory(cat.id)}
                                     className={cn(
-                                        "whitespace-nowrap px-4 py-2 rounded-full text-sm font-medium transition-colors border",
-                                        activeCategory === cat.id
-                                            ? "bg-orange-500 text-white border-orange-500 shadow-md"
-                                            : "bg-white text-gray-700 border-gray-200"
+                                        "flex flex-col items-center gap-1.5 min-w-[70px] p-3 rounded-xl transition-all border group",
+                                        active 
+                                            ? "bg-[#C76E00] border-[#C76E00] text-white shadow-lg scale-105 shadow-[#C76E00]/20" 
+                                            : "bg-white border-gray-100 text-gray-500 hover:border-[#C76E00]/20 hover:bg-[#C76E00]/5"
                                     )}
                                 >
-                                    {cat.name}
+                                    <Icon className={cn("w-4 h-4", active ? "text-white" : "text-gray-400 group-hover:text-[#C76E00]")} />
+                                    <span className="text-[9px] font-black uppercase tracking-tighter whitespace-nowrap">{displayName}</span>
                                 </button>
-                            ))}
-                        </div>
-                    )}
-                </div>
+                            );
+                        })}
+                    </div>
+                </section>
 
                 {/* POPULAR ITEMS */}
-                {!searchQuery && (
-                    <div>
-                        <div className="flex justify-between items-center mb-4">
-                            <h2 className="text-lg font-bold text-gray-900">🔥 Món phổ biến</h2>
-                            <Link to="/stores" className="text-orange-500 text-xs hover:text-orange-600 font-medium">
-                                Xem tất cả →
-                            </Link>
+                <section>
+                    <div className="flex justify-between items-end mb-4 border-l-4 border-brand pl-3">
+                        <div>
+                            <h2 className="text-lg font-black text-gray-900 uppercase tracking-tight">Món ăn phổ biến</h2>
+                            <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Gợi ý riêng cho bạn</p>
                         </div>
+                    </div>
+
+                    <div className="flex space-x-4 overflow-x-auto pb-4 -mx-4 px-4 scrollbar-hide">
                         {isLoading ? (
-                            <div className="flex space-x-4">
-                                {[1, 2, 3].map(i => <div key={i} className="w-[160px] h-48 bg-gray-200 rounded-xl animate-pulse" />)}
-                            </div>
+                            [1, 2, 3, 4].map(i => <div key={i} className="min-w-[180px] h-48 bg-gray-50 rounded-xl animate-pulse" />)
                         ) : (
-                            <div className="flex space-x-4 overflow-x-auto pb-4 -mx-4 px-4 scrollbar-hide">
-                                {foodStores.slice(0, 10).map((item) => (
-                                    <Link to={`/product/${item.id}`} state={{ foodStore: item }} key={item.id} className="min-w-[160px] w-[160px] block group">
-                                        <Card className="overflow-hidden border-none shadow-md h-full hover:shadow-lg transition-shadow">
-                                            <div className="relative h-32">
-                                                <img src={item.food?.imageSrc || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=300&q=80'} alt={item.food?.name} className="w-full h-full object-cover" />
-                                                <div className="absolute top-2 right-2 bg-white/80 p-1.5 rounded-full text-gray-500">
-                                                    <Heart className="w-4 h-4" />
-                                                </div>
+                            (() => {
+                                const items = (foodStores || [])
+                                    .filter(item => !searchQuery || item.food?.name?.toLowerCase().includes(searchQuery.toLowerCase()))
+                                    .slice(0, 10);
+                                
+                                if (items.length === 0 && searchQuery) {
+                                    return (
+                                        <div className="w-full py-8 text-center bg-white/50 rounded-2xl border border-dashed border-orange-200">
+                                            <div className="text-2xl mb-2">🍽️</div>
+                                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Không tìm thấy món ăn nào</p>
+                                        </div>
+                                    );
+                                }
+
+                                return items.map((item) => (
+                                    <Link to={`/product/${item.id}`} state={{ foodStore: item }} key={item.id} className="min-w-[200px] block group">
+                                        <div className="bg-white rounded-xl shadow-sm hover:shadow transition-all border border-gray-100 overflow-hidden">
+                                            <div className="relative h-28 overflow-hidden">
+                                                <img 
+                                                    src={item.food?.imageSrc || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500&q=80'} 
+                                                    alt={item.food?.name} 
+                                                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
+                                                />
                                             </div>
-                                            <CardContent className="p-3">
-                                                <h3 className="font-semibold text-gray-900 truncate text-sm">{item.food?.name || 'Món ăn'}</h3>
-                                                <p className="text-xs text-gray-500 truncate mb-2">{item.store?.name || ''}</p>
-                                                <div className="flex items-center justify-between">
-                                                    <div className="flex items-center text-xs text-yellow-500 font-medium">
-                                                        <Star className="w-3 h-3 fill-yellow-500 mr-1" />
-                                                        4.8
+                                            <div className="p-3">
+                                                <h3 className="font-bold text-xs text-gray-900 group-hover:text-[#C76E00] transition-colors line-clamp-1">{item.food?.name}</h3>
+                                                <p className="text-[9px] text-gray-400 mt-0.5 line-clamp-1">{item.store?.name}</p>
+                                                <div className="flex items-center justify-between mt-2 pt-2 border-t border-gray-50">
+                                                    <div className="flex items-center text-yellow-500 text-[9px] font-bold">
+                                                        <Star className="w-2.5 h-2.5 fill-yellow-500 mr-1" /> 4.8
                                                     </div>
-                                                    <span className="text-sm font-bold text-orange-600">
+                                                    <span className="text-xs font-black text-[#C76E00]">
                                                         {item.price?.toLocaleString()}đ
                                                     </span>
                                                 </div>
-                                            </CardContent>
-                                        </Card>
+                                            </div>
+                                        </div>
                                     </Link>
-                                ))}
-                            </div>
+                                ));
+                            })()
                         )}
                     </div>
-                )}
+                </section>
 
-                {/* RESTAURANTS LIST */}
-                <div className="pb-4">
-                    <div className="flex justify-between items-center mb-4">
-                        <h2 className="text-lg font-bold text-gray-900">
-                            {searchQuery ? `🔍 Kết quả cho "${searchQuery}"` : '🏪 Các nhà hàng gần bạn'}
-                        </h2>
-                        {!searchQuery && (
-                            <Link to="/stores" className="text-orange-500 text-xs hover:text-orange-600 font-medium">
-                                Xem tất cả →
-                            </Link>
-                        )}
-                    </div>
-                    <div className="space-y-4">
-                        {(searchQuery
-                            ? stores.filter(s =>
-                                s.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                                s.address?.toLowerCase().includes(searchQuery.toLowerCase())
-                            )
-                            : stores
-                        ).map((store) => (
-                            <Link to={`/store/${store.id}`} key={store.id} className="block group">
-                                <Card className="flex overflow-hidden border-none shadow-sm hover:shadow-md transition-shadow">
-                                    <div className="w-24 h-24 sm:w-32 sm:h-32 shrink-0 relative">
-                                        <img src={store.imageSrc} alt={store.name} className="w-full h-full object-cover" />
-                                    </div>
-                                    <div className="flex-1 p-3 flex flex-col justify-between">
-                                        <div>
-                                            <div className="flex justify-between items-start">
-                                                <h3 className="font-bold text-gray-900 line-clamp-1">{store.name}</h3>
-                                                <Badge variant="success" className="text-[10px] px-1.5 py-0 h-5">OPEN</Badge>
-                                            </div>
-                                            <p className="text-xs text-gray-500 mt-1 lines-clamp-1">{store.address}</p>
-                                        </div>
-
-                                        <div className="flex items-center justify-between text-xs text-gray-500 mt-2">
-                                            <div className="flex items-center space-x-3">
-                                                <span className="flex items-center text-yellow-500 font-medium">
-                                                    <Star className="w-3 h-3 fill-yellow-500 mr-1" />4.5
-                                                </span>
-                                                <span className="flex items-center">
-                                                    <MapPin className="w-3 h-3 mr-1" />2km
-                                                </span>
-                                            </div>
-                                            <span className="flex items-center">
-                                                <Clock className="w-3 h-3 mr-1" />15p
-                                            </span>
-                                        </div>
-                                    </div>
-                                </Card>
-                            </Link>
-                        ))}
-                    </div>
-                </div>
-
-                {/* BECOME A PARTNER CTA */}
-                {(!userRole || userRole === 'User') && (
-                    <Link to="/register-store" className="block group">
-                        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-amber-500 via-orange-500 to-red-500 p-5 shadow-lg shadow-orange-200">
-                            {/* Decorative blobs */}
-                            <div className="absolute -top-6 -right-6 w-32 h-32 rounded-full bg-white/10" />
-                            <div className="absolute -bottom-4 -left-4 w-24 h-24 rounded-full bg-white/10" />
-
-                            <div className="relative flex items-center gap-4">
-                                <div className="w-14 h-14 bg-white/20 backdrop-blur rounded-2xl flex items-center justify-center shrink-0 shadow-inner">
-                                    <Utensils className="w-7 h-7 text-white" />
-                                </div>
-                                <div className="flex-1">
-                                    <p className="text-white/80 text-[11px] font-semibold uppercase tracking-widest mb-0.5">Bạn có nhà hàng?</p>
-                                    <h3 className="text-white text-base font-black leading-tight">Đăng ký trở thành đối tác</h3>
-                                    <p className="text-white/70 text-xs mt-0.5">Kiếm thêm thu nhập, quản lý đơn hàng dễ dàng</p>
-                                </div>
-                                <div className="w-9 h-9 bg-white/20 rounded-xl flex items-center justify-center shrink-0 group-hover:bg-white/30 transition-colors">
-                                    <ChevronRight className="w-5 h-5 text-white" />
-                                </div>
-                            </div>
+                {/* RESTAURANTS */}
+                <section className="pb-8">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 border-l-4 border-gray-900 pl-3">
+                        <div>
+                            <h2 className="text-lg font-black text-gray-900 uppercase tracking-tight">Khám phá cửa hàng</h2>
+                            <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Tìm kiếm địa điểm ăn uống</p>
                         </div>
-                    </Link>
+                        
+                        <div className="flex gap-1 bg-gray-100 p-0.5 rounded-lg self-start">
+                            {[
+                                { id: 'nearest', label: 'Gần tôi' },
+                                { id: 'rating', label: 'Đánh giá' },
+                                { id: 'fastest', label: 'Nhanh' },
+                                { id: 'price', label: 'Giá' }
+                            ].map((btn) => (
+                                <button
+                                    key={btn.id}
+                                    onClick={() => setSortBy(btn.id as any)}
+                                    className={cn(
+                                        "px-2.5 py-1 rounded-md text-[9px] font-black transition-all uppercase tracking-tighter",
+                                        sortBy === btn.id 
+                                            ? "bg-[#C76E00] text-white shadow-md shadow-[#C76E00]/20" 
+                                            : "text-gray-400 hover:text-gray-600 hover:bg-gray-100"
+                                    )}
+                                >
+                                    {btn.label}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                    
+                    <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
+                        {isLoading ? (
+                            [1, 2, 3, 4, 5, 6].map(i => <div key={i} className="h-48 bg-gray-50 rounded-xl animate-pulse" />)
+                        ) : (
+                            (() => {
+                                const filteredStoreIds = new Set(foodStores.map(f => f.storeId));
+                                const storesToShow = sortedStores.filter(s => {
+                                    const matchesSearch = !searchQuery || s.name?.toLowerCase().includes(searchQuery.toLowerCase());
+                                    const matchesCategory = activeCategory === 0 || filteredStoreIds.has(s.id);
+                                    return matchesSearch && matchesCategory;
+                                });
+
+                                if (storesToShow.length === 0) {
+                                    return (
+                                        <div className="col-span-full py-12 text-center bg-white/50 rounded-3xl border border-dashed border-orange-200">
+                                            <div className="text-3xl mb-3">🏪</div>
+                                            <h3 className="text-sm font-black text-gray-900 uppercase tracking-tight italic">Không thấy cửa hàng phù hợp</h3>
+                                            <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-1">Thử tìm kiếm với từ khóa khác xem sao!</p>
+                                        </div>
+                                    );
+                                }
+
+                                return storesToShow.map((store) => (
+                                    <Link to={`/store/${store.id}`} key={store.id} className="group">
+                                        <div className="bg-white rounded-xl overflow-hidden shadow-sm hover:shadow transition-all border border-gray-100 h-full flex flex-col">
+                                            <div className="relative h-32 overflow-hidden">
+                                                <img 
+                                                    src={store.imageSrc || 'https://images.unsplash.com/photo-1552566626-52f8b828add9?w=600&q=80'} 
+                                                    alt={store.name} 
+                                                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" 
+                                                />
+                                                <div className="absolute top-2 left-2">
+                                                    <Badge className="bg-green-500/90 text-[7px] px-1.5 py-0.5 rounded font-bold border-none">OPEN</Badge>
+                                                </div>
+                                            </div>
+                                            
+                                            <div className="p-3 flex flex-col flex-1">
+                                                <h3 className="text-xs font-black text-gray-900 group-hover:text-[#C76E00] transition-colors line-clamp-1 uppercase tracking-tight">{store.name}</h3>
+                                                <p className="text-[9px] text-gray-400 line-clamp-1 mt-0.5">{store.address}</p>
+                                                
+                                                <div className="mt-auto pt-2 border-t border-gray-50 flex items-center justify-between text-[9px] font-bold">
+                                                    <div className="flex items-center text-yellow-600">
+                                                        <Star className="w-2.5 h-2.5 fill-yellow-500 text-yellow-500 mr-1" /> 4.7
+                                                    </div>
+                                                    <div className="text-gray-400 flex items-center">
+                                                        <Clock className="w-2.5 h-2.5 mr-1 text-[#C76E00]/60" /> 25p
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </Link>
+                                ));
+                            })()
+                        )}
+                    </div>
+                </section>
+
+                {/* BUSINESS CTA - Synchronized with brand palette */}
+                {(!userRole || userRole === 'User') && (
+                    <section className="pb-8">
+                        <Link to="/register-store" className="block group">
+                            <div className="relative overflow-hidden rounded-[2.5rem] bg-[#1A1A1A] p-8 sm:p-10 shadow-2xl shadow-orange-900/10 transition-all hover:shadow-orange-900/20 hover:-translate-y-1">
+                                <div className="absolute -top-12 -right-12 w-48 h-48 rounded-full bg-[#C76E00]/10 blur-3xl group-hover:bg-[#C76E00]/20 transition-colors" />
+                                <div className="absolute -bottom-12 -left-12 w-32 h-32 rounded-full bg-white/5 blur-2xl" />
+                                
+                                <div className="relative flex flex-col sm:flex-row items-center justify-between gap-6">
+                                    <div className="flex-1 text-center sm:text-left space-y-3">
+                                        <div className="flex items-center justify-center sm:justify-start gap-3 mb-1">
+                                            <div className="w-10 h-10 bg-[#C76E00] rounded-xl flex items-center justify-center shadow-lg shadow-orange-900/20 rotate-3 group-hover:rotate-0 transition-transform">
+                                                <Store className="w-5 h-5 text-white" />
+                                            </div>
+                                            <Badge className="bg-[#C76E00]/20 text-[#C76E00] border-none text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-lg">Đối tác</Badge>
+                                        </div>
+                                        <h3 className="text-xl font-black text-white uppercase tracking-tight italic leading-tight">Bạn là chủ quán?</h3>
+                                        <p className="text-gray-400 text-[10px] max-w-xs font-bold uppercase tracking-[0.2em]">Đăng ký bán hàng cùng FoodDelivery ngay</p>
+                                    </div>
+                                    <button className="bg-[#C76E00] text-white px-8 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all hover:bg-[#A55B00] active:scale-95 shadow-xl shadow-orange-900/20 flex items-center gap-3">
+                                        Bắt đầu ngay
+                                        <ChevronRight className="w-3.5 h-3.5" />
+                                    </button>
+                                </div>
+                            </div>
+                        </Link>
+                    </section>
                 )}
             </div>
         </div>

@@ -108,7 +108,7 @@ export default function LoginPage() {
     };
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-white to-orange-50 flex items-center justify-center p-4">
+        <div className="min-h-screen bg-[#FCF9F5] flex items-center justify-center p-4 font-sans">
             <div className="w-full max-w-md space-y-8">
                 <div className="text-center">
                     <div className="mx-auto h-16 w-16 bg-orange-100 rounded-full flex items-center justify-center mb-4">
@@ -118,7 +118,7 @@ export default function LoginPage() {
                     <p className="mt-2 text-gray-600">Đặt món ngon, giao tận nơi</p>
                 </div>
 
-                <Card className="border-none shadow-lg bg-white/80 backdrop-blur-sm">
+                <Card className="border-none shadow-2xl shadow-orange-900/5 bg-white/80 backdrop-blur-xl rounded-[2.5rem] overflow-hidden">
                     <CardHeader>
                         <CardTitle className="text-xl text-center">Đăng nhập</CardTitle>
                         <CardDescription className="text-center">Nhập email và mật khẩu của bạn</CardDescription>
@@ -150,7 +150,7 @@ export default function LoginPage() {
                                     Quên mật khẩu?
                                 </Link>
                             </div>
-                            <Button type="submit" className="w-full" isLoading={isLoading}>
+                            <Button type="submit" className="w-full py-6 rounded-2xl bg-[#C76E00] hover:bg-[#A55B00] text-white font-black text-xs uppercase tracking-[0.2em] shadow-xl shadow-orange-900/20 active:scale-95 transition-all" isLoading={isLoading}>
                                 ĐĂNG NHẬP
                             </Button>
                         </form>
