@@ -47,120 +47,197 @@ const StoreManagement = () => {
     };
 
     const currentList = tab === 'pending' ? pendingStores : stores;
+
     const filteredStores = currentList.filter(store =>
         store.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         store.address?.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
     return (
-        <div className="space-y-6">
+        <div className="bg-[#FFF7ED] min-h-screen p-8 font-[Inter] space-y-6">
+
             {/* Header */}
-            <div className="flex flex-col gap-1">
-                <h2 className="text-3xl font-black text-gray-900 dark:text-white">Quản lý cửa hàng</h2>
-                <p className="text-gray-600 dark:text-gray-400">Xem và quản lý tất cả cửa hàng.</p>
+            <div>
+                <h2 className="text-3xl font-bold text-[#1F2937]">
+                    Quản lý cửa hàng
+                </h2>
+                <p className="text-[#4B5563]">
+                    Xem và quản lý tất cả cửa hàng
+                </p>
             </div>
 
             {/* Tabs */}
-            <div className="flex gap-2">
+            <div className="flex gap-3">
+
                 <button
                     onClick={() => setTab('all')}
-                    className={`px-4 py-2 rounded-lg font-bold text-sm transition-colors ${tab === 'all' ? 'bg-orange-600 text-white' : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300'}`}
+                    className={`px-4 py-2 rounded-xl text-sm font-medium transition
+                        ${tab === 'all'
+                            ? 'bg-[#F97316] text-white'
+                            : 'bg-white border border-[#FED7AA] text-[#374151] hover:bg-[#FFF7ED]'
+                        }`}
                 >
                     Tất cả ({stores.length})
                 </button>
+
                 <button
                     onClick={() => setTab('pending')}
-                    className={`px-4 py-2 rounded-lg font-bold text-sm transition-colors flex items-center gap-1 ${tab === 'pending' ? 'bg-orange-600 text-white' : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300'}`}
+                    className={`px-4 py-2 rounded-xl text-sm font-medium flex items-center gap-1 transition
+                        ${tab === 'pending'
+                            ? 'bg-[#F97316] text-white'
+                            : 'bg-white border border-[#FED7AA] text-[#374151] hover:bg-[#FFF7ED]'
+                        }`}
                 >
                     <Clock className="w-4 h-4" />
                     Chờ duyệt ({pendingStores.length})
                 </button>
+
             </div>
 
             {/* Search */}
-            <div className="relative">
+            <div className="relative max-w-md">
+
                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+
                 <input
                     type="text"
                     placeholder="Search stores..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full pl-12 pr-4 py-3 bg-white dark:bg-[#2d1b15] border border-gray-200 dark:border-gray-800 rounded-xl focus:ring-2 focus:ring-orange-500"
+                    className="w-full pl-12 pr-4 py-3 bg-white border border-[#FED7AA] rounded-xl focus:ring-2 focus:ring-[#F97316] outline-none"
                 />
+
             </div>
 
             {/* Store Grid */}
             {loading ? (
-                <div className="text-center py-10">Loading stores...</div>
+                <div className="flex justify-center py-16">
+                    <Loader2 className="w-8 h-8 animate-spin text-[#F97316]" />
+                </div>
             ) : (
+
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+
                     {filteredStores.map((store) => (
-                        <div key={store.id} className="bg-white dark:bg-[#2d1b15] rounded-xl shadow-sm border border-gray-200 dark:border-gray-800 overflow-hidden hover:shadow-md transition-shadow">
-                            <div className="h-32 bg-gray-200 dark:bg-gray-800 relative">
+
+                        <div
+                            key={store.id}
+                            className="bg-white rounded-2xl shadow-md border border-[#FED7AA] overflow-hidden hover:shadow-lg transition"
+                        >
+
+                            {/* Image */}
+                            <div className="h-36 bg-[#FFEDD5] relative">
+
                                 {store.imageSrc ? (
-                                    <img src={store.imageSrc} alt={store.name} className="w-full h-full object-cover" />
+                                    <img
+                                        src={store.imageSrc}
+                                        alt={store.name}
+                                        className="w-full h-full object-cover"
+                                    />
                                 ) : (
-                                    <div className="w-full h-full flex items-center justify-center text-gray-400">
+                                    <div className="flex items-center justify-center h-full text-orange-400">
                                         <Store className="w-12 h-12" />
                                     </div>
                                 )}
+
                                 <div className="absolute top-2 right-2">
+
                                     {store.isApproved ? (
-                                        <span className="px-2 py-1 text-[10px] font-bold bg-green-100 text-green-700 rounded-lg flex items-center gap-1">
-                                            <CheckCircle className="w-3 h-3" /> Đã duyệt
+                                        <span className="px-2 py-1 text-[10px] font-medium bg-green-100 text-green-700 rounded-lg flex items-center gap-1">
+                                            <CheckCircle className="w-3 h-3" />
+                                            Đã duyệt
                                         </span>
                                     ) : (
-                                        <span className="px-2 py-1 text-[10px] font-bold bg-yellow-100 text-yellow-700 rounded-lg">
+                                        <span className="px-2 py-1 text-[10px] font-medium bg-yellow-100 text-yellow-700 rounded-lg">
                                             Chờ duyệt
                                         </span>
                                     )}
+
                                 </div>
+
                             </div>
+
+                            {/* Body */}
                             <div className="p-5 space-y-3">
-                                <h3 className="font-bold text-lg text-gray-900 dark:text-white truncate" title={store.name}>{store.name}</h3>
+
+                                <h3
+                                    className="font-semibold text-lg text-[#1F2937] truncate"
+                                    title={store.name}
+                                >
+                                    {store.name}
+                                </h3>
+
                                 {store.description && (
-                                    <p className="text-xs text-gray-500 line-clamp-2">{store.description}</p>
+                                    <p className="text-xs text-gray-500 line-clamp-2">
+                                        {store.description}
+                                    </p>
                                 )}
 
-                                <div className="flex items-start gap-2 text-sm text-gray-600 dark:text-gray-400">
+                                <div className="flex items-start gap-2 text-sm text-[#4B5563]">
                                     <MapPin className="w-4 h-4 mt-0.5 shrink-0" />
-                                    <span className="line-clamp-2">{store.address || 'Chưa có địa chỉ'}</span>
+                                    <span className="line-clamp-2">
+                                        {store.address || 'Chưa có địa chỉ'}
+                                    </span>
                                 </div>
 
-                                <div className="flex items-center gap-2 text-xs text-gray-500">
+                                <div className="flex items-center gap-2 text-xs">
+
                                     {store.isOpen ? (
-                                        <span className="text-green-600 font-bold">🟢 Đang mở</span>
+                                        <span className="text-green-600 font-medium">
+                                            🟢 Đang mở
+                                        </span>
                                     ) : (
-                                        <span className="text-red-500 font-bold">🔴 Đã đóng</span>
+                                        <span className="text-red-500 font-medium">
+                                            🔴 Đã đóng
+                                        </span>
                                     )}
-                                    {store.phone && <span>• {store.phone}</span>}
+
+                                    {store.phone && (
+                                        <span className="text-gray-500">
+                                            • {store.phone}
+                                        </span>
+                                    )}
+
                                 </div>
 
-                                <div className="pt-3 border-t border-gray-100 dark:border-gray-800 flex justify-between items-center">
-                                    <span className="text-xs font-bold px-2 py-1 bg-gray-100 dark:bg-gray-800 rounded-lg text-gray-600 dark:text-gray-300">
+                                {/* Footer */}
+                                <div className="pt-3 border-t border-[#FED7AA] flex justify-between items-center">
+
+                                    <span className="text-xs font-medium px-2 py-1 bg-[#FFEDD5] rounded-lg text-[#9A3412]">
                                         ID: {store.id}
                                     </span>
+
                                     {!store.isApproved && (
                                         <button
                                             onClick={() => handleApprove(store.id)}
                                             disabled={approvingId === store.id}
-                                            className="px-3 py-1.5 bg-orange-600 text-white text-xs font-bold rounded-lg hover:bg-orange-700 disabled:opacity-50 flex items-center gap-1"
+                                            className="px-3 py-1.5 bg-[#F97316] text-white text-xs font-medium rounded-lg hover:bg-[#EA580C] disabled:opacity-50 flex items-center gap-1"
                                         >
-                                            {approvingId === store.id && <Loader2 className="w-3 h-3 animate-spin" />}
+                                            {approvingId === store.id &&
+                                                <Loader2 className="w-3 h-3 animate-spin" />
+                                            }
                                             Duyệt
                                         </button>
                                     )}
+
                                 </div>
+
                             </div>
+
                         </div>
+
                     ))}
-                    {!loading && filteredStores.length === 0 && (
-                        <div className="col-span-full text-center py-12 text-gray-500">
-                            Không tìm thấy cửa hàng.
+
+                    {filteredStores.length === 0 && (
+                        <div className="col-span-full text-center py-16 text-gray-500">
+                            Không tìm thấy cửa hàng
                         </div>
                     )}
+
                 </div>
+
             )}
+
         </div>
     );
 }
