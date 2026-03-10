@@ -9,20 +9,20 @@ import { foodStoreApi, storeApi, foodTypeApi, voucherApi } from '../../../api/ap
 import type { FoodStoreDto, StoreDto } from '../../../types/swagger';
 
 const CATEGORY_MAP: Record<string, string> = {
-    'Appetizer': 'Ăn vặt',
-    'Main Course': 'Bún & Phở',
-    'Dessert': 'Bánh ngọt',
-    'Beverage': 'Đồ uống',
-    'Fast Food': 'Nhanh & Tiện',
+    'Appetizer': 'APPETIZER',
+    'Main Course': 'MAIN COURSE',
+    'Dessert': 'DESSERT',
+    'Beverage': 'BEVERAGE',
+    'Fast Food': 'FAST FOOD',
     'All': 'Tất cả'
 };
 
 const CATEGORY_ICONS: Record<string, any> = {
-    'Ăn vặt': Zap,
-    'Bún & Phở': Utensils,
-    'Bánh ngọt': Salad,
-    'Đồ uống': Coffee,
-    'Nhanh & Tiện': Pizza,
+    'APPETIZER': Zap,
+    'MAIN COURSE': Utensils,
+    'DESSERT': Salad,
+    'BEVERAGE': Coffee,
+    'FAST FOOD': Pizza,
     'Tất cả': ShoppingCart
 };
 

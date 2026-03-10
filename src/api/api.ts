@@ -287,7 +287,7 @@ export const tenantApi = {
 };
 
 export const voucherApi = {
-    getAll: (params?: { storeId?: number }) => api.get('/api/vouchers/active', { params }),  // alias for getActive
+    getAll: (params?: { storeId?: number }) => api.get('/api/vouchers/active', { params }),
     getActive: (params?: { storeId?: number }) => api.get('/api/vouchers/active', { params }),
     getAvailable: (params?: { orderAmount?: number; storeId?: number }) =>
         api.get('/api/vouchers/available', { params }),

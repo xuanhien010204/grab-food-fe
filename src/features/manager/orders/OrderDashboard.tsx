@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Clock, User, Check, X, Phone, RefreshCw, MapPin } from 'lucide-react';
+import { Clock, User, Check, X, RefreshCw, MapPin, TrendingUp } from 'lucide-react';
 import { orderApi, userApi, storeApi } from '../../../api/api';
 import type { OrderDto } from '../../../types/swagger';
 import { OrderStatus, OrderStatusName } from '../../../types/swagger';
@@ -21,6 +21,8 @@ const OrderDashboard = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isOpen, setIsOpen] = useState(true);
   const [storeId, setStoreId] = useState<number | null>(null);
+  const [selectedOrder, setSelectedOrder] = useState<OrderDto | null>(null);
+  const [isDetailLoading, setIsDetailLoading] = useState(false);
 
   // Get manager's store ID from profile + stores
   useEffect(() => {
@@ -79,6 +81,22 @@ const OrderDashboard = () => {
     handleStatusUpdate(orderId, OrderStatus.Cancelled, reason);
   };
 
+  const handleViewDetail = async (order: OrderDto) => {
+    setSelectedOrder(order); // Show modal immediately with partial data
+    setIsDetailLoading(true);
+    try {
+      const res = await orderApi.getById(order.id);
+      if (res.data) {
+        setSelectedOrder(res.data);
+      }
+    } catch (error) {
+      console.error("Failed to fetch order details", error);
+      toast.error("Không thể tải chi tiết món ăn");
+    } finally {
+      setIsDetailLoading(false);
+    }
+  };
+
   const filteredOrders = orders.filter(o => o.status === activeTab);
 
   // Calculate counts for tabs
@@ -100,35 +118,38 @@ const OrderDashboard = () => {
     <div className="space-y-6">
       {/* Header with Store Status */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="rounded-xl bg-white dark:bg-[#2d1b15] p-6 shadow-sm border border-gray-200 dark:border-gray-800 border-l-4 border-l-orange-600">
+        <div className="rounded-2xl bg-cream/40 dark:bg-charcoal p-6 shadow-sm border border-dark-orange/10 dark:border-gray-800 border-l-4 border-l-dark-orange transition-all hover:shadow-md">
           <div className="flex justify-between items-start">
             <div>
-              <p className="text-gray-600 dark:text-gray-400 text-sm font-bold uppercase tracking-wider mb-2">
+              <p className="text-charcoal/60 dark:text-cream/60 text-[10px] font-black uppercase tracking-[0.2em] mb-3">
                 Trạng thái cửa hàng
               </p>
               <div className="flex items-center gap-3">
-                <div className={`px-4 py-2 rounded-lg font-bold text-white ${isOpen ? 'bg-green-600' : 'bg-red-600'}`}>
+                <div className={`px-4 py-2 rounded-xl font-black text-white shadow-sm transition-all ${isOpen ? 'bg-emerald-600' : 'bg-rose-600 shadow-lg shadow-rose-600/20'}`}>
                   {isOpen ? '🟢 MỞ CỬA' : '🔴 ĐÓNG CỬA'}
                 </div>
                 <button
                   onClick={() => setIsOpen(!isOpen)}
-                  className={`relative w-12 h-7 rounded-full transition-all ${isOpen ? 'bg-green-600' : 'bg-gray-400'}`}
+                  className={`relative w-12 h-7 rounded-full transition-all duration-300 ${isOpen ? 'bg-emerald-500' : 'bg-gray-300 dark:bg-gray-700'}`}
                 >
                   <div className={`absolute top-1 w-5 h-5 bg-white rounded-full transition-all ${isOpen ? 'right-1' : 'left-1'}`}></div>
                 </button>
               </div>
             </div>
-            <button onClick={fetchOrders} className="p-2 bg-gray-100 hover:bg-gray-200 rounded-full transition-colors" title="Làm mới">
-              <RefreshCw className={`w-5 h-5 text-gray-600 ${isLoading ? 'animate-spin' : ''}`} />
+            <button onClick={fetchOrders} className="p-2 bg-gray-100 dark:bg-gray-800 hover:bg-dark-orange/10 rounded-full transition-all hover:rotate-180" title="Làm mới">
+              <RefreshCw className={`w-5 h-5 text-gray-600 dark:text-gray-400 ${isLoading ? 'animate-spin text-dark-orange' : ''}`} />
             </button>
           </div>
         </div>
 
-        <div className="rounded-xl bg-gradient-to-br from-orange-600 to-orange-700 text-white p-6 shadow-lg">
-          <p className="text-orange-100 text-sm font-bold uppercase tracking-wider mb-2">Doanh thu hôm nay</p>
-          <div className="flex items-baseline gap-2">
-            <h3 className="text-4xl font-bold">₫{todayRevenue.toLocaleString('vi-VN')}</h3>
-            <span className="text-orange-200 text-sm">ước tính</span>
+        <div className="rounded-2xl bg-gradient-to-br from-dark-orange to-[#BF4300] text-white p-6 shadow-xl shadow-dark-orange/20 relative overflow-hidden group">
+          <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-110 transition-transform">
+            <TrendingUp className="w-24 h-24" />
+          </div>
+          <p className="text-orange-50 text-sm font-black uppercase tracking-widest mb-2">Doanh thu hôm nay</p>
+          <div className="flex items-baseline gap-2 relative z-10">
+            <h3 className="text-4xl font-black tabular-nums">₫{todayRevenue.toLocaleString('vi-VN')}</h3>
+            <span className="text-orange-100/80 text-xs font-bold bg-white/10 px-2 py-0.5 rounded-full">ước tính</span>
           </div>
         </div>
       </div>
@@ -139,13 +160,13 @@ const OrderDashboard = () => {
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.status)}
-            className={`flex items-center gap-2 px-4 py-3 rounded-xl font-bold transition-all whitespace-nowrap border-2 ${activeTab === tab.status
-              ? 'border-transparent text-white bg-gradient-to-r from-orange-600 to-orange-700'
-              : 'border-gray-200 dark:border-gray-800 text-gray-700 dark:text-gray-300 bg-white dark:bg-[#2d1b15] hover:border-gray-300'
+            className={`flex items-center gap-2 px-6 py-3 rounded-2xl font-black transition-all whitespace-nowrap border-2 duration-300 ${activeTab === tab.status
+              ? 'border-dark-orange text-white bg-dark-orange shadow-lg shadow-dark-orange/20 scale-105'
+              : 'border-dark-orange/10 dark:border-gray-800 text-charcoal/60 dark:text-cream/60 bg-cream/40 dark:bg-charcoal hover:border-dark-orange/30 hover:text-dark-orange'
               }`}
           >
             <span>{tab.label}</span>
-            <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${activeTab === tab.status ? 'bg-white/30 text-white' : 'bg-orange-100 text-orange-600'}`}>
+            <span className={`px-2 py-0.5 rounded-full text-[10px] font-black ${activeTab === tab.status ? 'bg-white/30 text-white' : 'bg-dark-orange/10 text-dark-orange'}`}>
               {counts[tab.status] || 0}
             </span>
           </button>
@@ -153,134 +174,156 @@ const OrderDashboard = () => {
       </div>
 
       {/* Orders Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-in fade-in duration-500">
         {!storeId ? (
-          <div className="col-span-full py-12 text-center">
-            <p className="text-gray-500 font-bold text-lg">Không tìm thấy cửa hàng của bạn</p>
+          <div className="col-span-full py-20 text-center bg-cream/40 dark:bg-charcoal rounded-3xl border border-dashed border-dark-orange/20 dark:border-gray-700">
+            <p className="text-charcoal/40 font-black text-lg italic uppercase tracking-widest">Không tìm thấy cửa hàng của bạn</p>
           </div>
         ) : filteredOrders.length > 0 ? (
           filteredOrders.map((order) => (
-            <div key={order.id} className="rounded-xl bg-white dark:bg-[#2d1b15] border border-gray-200 dark:border-gray-800 overflow-hidden shadow-sm hover:shadow-lg transition-shadow">
-              {/* Card Header */}
-              <div className="p-4 bg-orange-50 dark:bg-orange-500/10 border-b-2 border-orange-600">
-                <div className="flex items-start justify-between mb-2">
-                  <div>
-                    <p className="font-bold text-lg text-gray-900 dark:text-white">#{order.id.slice(-6)}</p>
-                    <div className="flex items-center gap-1 text-gray-600 dark:text-gray-400 text-sm mt-1">
-                      <Clock className="w-4 h-4" />
+            <div key={order.id} className="rounded-3xl bg-white dark:bg-gray-900 border border-dark-orange/10 dark:border-gray-800 overflow-hidden shadow-[0_4px_20px_rgba(0,0,0,0.03)] hover:shadow-[0_15px_40px_rgba(199,110,0,0.12)] transition-all duration-300 flex flex-col group/card relative">
+              {/* Card Header with vibrant accent */}
+              <div className="p-4 bg-gradient-to-br from-dark-orange/[0.04] to-transparent dark:from-dark-orange/10 border-b border-gray-100 dark:border-gray-800 relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-16 h-16 bg-dark-orange/5 rounded-full -mr-8 -mt-8 blur-xl"></div>
+                <div className="flex items-start justify-between relative z-10">
+                  <div className="space-y-0.5">
+                    <p className="font-black text-lg text-charcoal dark:text-cream tracking-tight">#{order.id.slice(-6).toUpperCase()}</p>
+                    <div className="flex items-center gap-2 text-dark-orange/80 font-black text-[9px] uppercase tracking-[0.2em]">
+                      <Clock className="w-3 h-3" />
                       {getTimeString(order.purchaseDate)}
                     </div>
                   </div>
-                  <p className="text-2xl font-bold text-orange-600 dark:text-orange-500">
-                    ₫{(order.total || 0).toLocaleString('vi-VN')}
-                  </p>
+                  <div className="text-right">
+                    <p className="text-xl font-black text-dark-orange">
+                      ₫{(order.total || 0).toLocaleString('vi-VN')}
+                    </p>
+                    <span className="px-1.5 py-0.5 bg-dark-orange/5 text-dark-orange rounded-md text-[8px] font-black uppercase tracking-widest border border-dark-orange/10">
+                      {order.totalItems} món
+                    </span>
+                  </div>
                 </div>
               </div>
 
-              {/* Card Content */}
-              <div className="p-4 space-y-4">
-                {/* Customer Info */}
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2 text-gray-900 dark:text-white">
-                    <User className="w-5 h-5 text-gray-500" />
-                    <div>
-                      <p className="font-bold">{order.recipientName || 'Khách'}</p>
-                      {order.recipientPhone && (
-                        <a href={`tel:${order.recipientPhone}`} className="text-sm text-blue-600 dark:text-blue-400 flex items-center gap-1 hover:underline">
-                          <Phone className="w-3 h-3" />
-                          {order.recipientPhone}
-                        </a>
-                      )}
-                    </div>
+              {/* Card Content with high contrast */}
+              <div className="p-4 space-y-4 flex-1 bg-white dark:bg-gray-900">
+                {/* Customer Identity Section */}
+                <div className="flex items-center gap-3 bg-gray-50/50 dark:bg-charcoal/40 p-3 rounded-2xl border border-gray-100 dark:border-gray-800 transition-colors group-hover/card:border-dark-orange/10">
+                  <div className="w-10 h-10 rounded-full bg-dark-orange/10 flex items-center justify-center border-2 border-white dark:border-gray-800 shadow-sm shrink-0">
+                    <User className="w-5 h-5 text-dark-orange" />
                   </div>
-                  {order.deliveryAddress && (
-                    <div className="flex items-start gap-2 text-sm text-gray-600 dark:text-gray-400">
-                      <MapPin className="w-4 h-4 mt-0.5 shrink-0" />
-                      <span>{order.deliveryAddress}</span>
-                    </div>
-                  )}
+                  <div className="min-w-0 flex-1">
+                    <p className="font-black text-charcoal dark:text-cream truncate uppercase text-xs mb-0.5">{order.recipientName || 'Khách hàng'}</p>
+                    {order.recipientPhone && (
+                      <a href={`tel:${order.recipientPhone}`} className="text-[10px] font-extrabold text-blue-500 hover:text-blue-600 transition-colors uppercase tracking-[0.1em]">
+                        {order.recipientPhone}
+                      </a>
+                    )}
+                  </div>
                 </div>
 
-                {/* Items */}
-                <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-3 space-y-2 max-h-40 overflow-y-auto">
-                  <p className="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase">Món ({order.totalItems})</p>
-                  {order.items?.map((item, idx) => (
-                    <div key={idx} className="flex items-center justify-between text-sm">
-                      <span className="text-gray-700 dark:text-gray-300">
-                        {item.quantity}x {item.foodName}
-                      </span>
-                      <span className="text-gray-600 dark:text-gray-400">
-                        ₫{item.total.toLocaleString('vi-VN')}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Notes */}
-                {order.note && (
-                  <div className="bg-orange-50 dark:bg-orange-500/10 border border-orange-200 dark:border-orange-500/30 rounded-lg p-2">
-                    <p className="text-xs font-bold text-orange-800 dark:text-orange-200 mb-1">Ghi chú:</p>
-                    <p className="text-xs text-orange-700 dark:text-orange-300 italic">{order.note}</p>
+                {/* Delivery Context */}
+                {order.deliveryAddress && (
+                  <div className="flex items-start gap-2 px-1">
+                    <MapPin className="w-3.5 h-3.5 text-dark-orange shrink-0 mt-0.5 opacity-60" />
+                    <span className="text-[10px] font-bold text-charcoal/60 dark:text-cream/60 leading-relaxed line-clamp-1">
+                      {order.deliveryAddress}
+                    </span>
                   </div>
                 )}
 
-                {/* Payment info */}
-                <div className="text-xs text-gray-500 flex justify-between">
-                  <span>Thanh toán: {order.paymentMethodName}</span>
-                  <span className={order.paymentStatus === 1 ? 'text-green-600' : 'text-yellow-600'}>
-                    {order.paymentStatusName}
-                  </span>
+                {/* Interactive Items Summary */}
+                <button 
+                  onClick={() => handleViewDetail(order)}
+                  className="w-full text-left bg-gray-50/50 dark:bg-gray-800/40 hover:bg-white dark:hover:bg-gray-800 rounded-xl border border-dashed border-gray-200 dark:border-gray-700 p-3 space-y-2 transition-all group/btn hover:border-dark-orange/20"
+                >
+                  <div className="flex justify-between items-center mb-1">
+                    <p className="text-[8px] font-black text-charcoal/40 dark:text-cream/40 uppercase tracking-[0.2em]">Xem đơn hàng</p>
+                    <span className="text-[9px] font-black text-dark-orange uppercase group-hover/btn:translate-x-1 transition-transform flex items-center gap-1.5 underline decoration-dark-orange/10 decoration-2 underline-offset-2">
+                      Chi tiết →
+                    </span>
+                  </div>
+                  <div className="space-y-1.5">
+                    {order.items?.slice(0, 2).map((item, idx) => (
+                      <div key={idx} className="flex items-center justify-between gap-2">
+                        <p className="text-[10px] font-bold text-charcoal/70 dark:text-cream/70 truncate flex-1">
+                          {item.foodName}
+                        </p>
+                        <span className="text-dark-orange text-[9px] font-black min-w-[1.5rem] text-right">
+                          x{item.quantity}
+                        </span>
+                      </div>
+                    ))}
+                    {order.items && order.items.length > 2 && (
+                      <p className="text-[9px] font-black text-charcoal/30 italic pt-1 border-t border-gray-100 dark:border-gray-700">
+                        + {order.items.length - 2} món khác...
+                      </p>
+                    )}
+                  </div>
+                </button>
+
+                {/* Footer Details */}
+                <div className="flex justify-between items-center px-1 border-t border-gray-50 dark:border-gray-800 pt-3">
+                  <div className="flex flex-col gap-0.5">
+                    <span className="text-[8px] font-black text-charcoal/30 dark:text-cream/30 uppercase tracking-[0.2em]">Thanh toán</span>
+                    <span className="text-[10px] font-black text-charcoal/70 dark:text-cream/70 uppercase tracking-tight">{order.paymentMethodName}</span>
+                  </div>
+                  <div className="text-right flex flex-col gap-0.5">
+                    <span className="text-[8px] font-black text-charcoal/30 dark:text-cream/30 uppercase tracking-[0.2em]">Trạng thái</span>
+                    <span className={`text-[10px] font-black uppercase tracking-widest ${order.paymentStatus === 1 ? 'text-emerald-500' : 'text-amber-500'}`}>
+                      {order.paymentStatusName}
+                    </span>
+                  </div>
                 </div>
               </div>
 
-              {/* Action Buttons */}
-              <div className="p-4 border-t border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900 flex gap-2">
+              {/* Compact Action Buttons */}
+              <div className="p-3 bg-gray-50/50 dark:bg-white/5 border-t border-gray-100 dark:border-gray-800 flex gap-2">
                 {activeTab === OrderStatus.Pending && (
                   <>
                     <button
                       onClick={() => handleStatusUpdate(order.id, OrderStatus.Confirmed)}
-                      className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-bold rounded-lg transition-colors"
+                      className="flex-[2] flex items-center justify-center gap-2 px-3 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-black rounded-xl transition-all shadow-md active:scale-95 text-[10px] uppercase tracking-[0.1em]"
                     >
-                      <Check className="w-4 h-4" /> Xác nhận
+                      <Check className="w-3.5 h-3.5" /> Xác nhận
                     </button>
                     <button
                       onClick={() => handleReject(order.id)}
-                      className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg transition-colors"
+                      className="flex-1 flex items-center justify-center gap-2 px-3 py-3 bg-white hover:bg-rose-50 dark:bg-transparent dark:hover:bg-rose-900/10 text-rose-600 border border-rose-100 dark:border-rose-900/30 font-black rounded-xl transition-all active:scale-95 text-[10px] uppercase tracking-[0.1em]"
                     >
-                      <X className="w-4 h-4" /> Từ chối
+                      <X className="w-3.5 h-3.5" /> Từ chối
                     </button>
                   </>
                 )}
                 {activeTab === OrderStatus.Confirmed && (
                   <button
                     onClick={() => handleStatusUpdate(order.id, OrderStatus.Preparing)}
-                    className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-yellow-600 hover:bg-yellow-700 text-white font-bold rounded-lg transition-colors"
+                    className="w-full flex items-center justify-center gap-2 px-3 py-3.5 bg-amber-500 hover:bg-amber-600 text-white font-black rounded-xl transition-all shadow-md uppercase text-[10px] tracking-[0.15em]"
                   >
-                    <Check className="w-4 h-4" /> Bắt đầu chuẩn bị
+                    Bắt đầu chế biến <Clock className="w-3.5 h-3.5" />
                   </button>
                 )}
                 {activeTab === OrderStatus.Preparing && (
                   <button
                     onClick={() => handleStatusUpdate(order.id, OrderStatus.Ready)}
-                    className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg transition-colors"
+                    className="w-full flex items-center justify-center gap-2 px-3 py-3.5 bg-blue-500 hover:bg-blue-600 text-white font-black rounded-xl transition-all shadow-md uppercase text-[10px] tracking-[0.15em]"
                   >
-                    <Check className="w-4 h-4" /> Sẵn sàng giao
+                    Đã nấu xong <Check className="w-3.5 h-3.5" />
                   </button>
                 )}
                 {activeTab === OrderStatus.Ready && (
                   <button
                     onClick={() => handleStatusUpdate(order.id, OrderStatus.Delivering)}
-                    className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-bold rounded-lg transition-colors"
+                    className="w-full flex items-center justify-center gap-2 px-3 py-3.5 bg-indigo-500 hover:bg-indigo-600 text-white font-black rounded-xl transition-all shadow-md uppercase text-[10px] tracking-[0.15em]"
                   >
-                    <Check className="w-4 h-4" /> Bắt đầu giao
+                    Giao shipper <TrendingUp className="w-3.5 h-3.5" />
                   </button>
                 )}
                 {activeTab === OrderStatus.Delivering && (
                   <button
                     onClick={() => handleStatusUpdate(order.id, OrderStatus.Completed)}
-                    className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg transition-colors"
+                    className="w-full flex items-center justify-center gap-2 px-3 py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white font-black rounded-xl transition-all shadow-md uppercase text-[10px] tracking-[0.15em]"
                   >
-                    <Check className="w-4 h-4" /> Hoàn thành
+                    Hoàn tất đơn <Check className="w-3.5 h-3.5" />
                   </button>
                 )}
               </div>
@@ -294,6 +337,188 @@ const OrderDashboard = () => {
           </div>
         )}
       </div>
+
+      {/* Detail Modal */}
+      {selectedOrder && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
+          <div className="bg-white dark:bg-charcoal w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden border border-dark-orange/10 flex flex-col max-h-[90vh]">
+            {/* Modal Header */}
+            <div className="p-6 bg-cream/30 dark:bg-gray-800/50 border-b border-dark-orange/10 flex justify-between items-center">
+              <div>
+                <h2 className="text-2xl font-black text-charcoal dark:text-cream">Chi tiết đơn hàng</h2>
+                <p className="text-dark-orange font-bold text-sm">#{selectedOrder.id.toUpperCase()}</p>
+              </div>
+              <button 
+                onClick={() => setSelectedOrder(null)}
+                className="p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-full transition-colors"
+                title="Đóng"
+              >
+                <X className="w-6 h-6 text-charcoal/60 dark:text-cream/60" />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-6 overflow-y-auto space-y-8 custom-scrollbar relative">
+              {isDetailLoading && (
+                <div className="absolute inset-0 z-10 bg-white/60 dark:bg-charcoal/60 backdrop-blur-[2px] flex items-center justify-center">
+                  <div className="flex flex-col items-center gap-3">
+                    <RefreshCw className="w-10 h-10 text-dark-orange animate-spin" />
+                    <p className="text-sm font-black text-dark-orange uppercase tracking-widest">Đang tải chi tiết...</p>
+                  </div>
+                </div>
+              )}
+              
+              {/* Order Info Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div className="space-y-6">
+                  <div>
+                    <p className="text-[10px] font-black text-charcoal/40 dark:text-cream/40 uppercase tracking-[0.2em] mb-3">Thông tin khách hàng</p>
+                    <div className="flex items-center gap-4 bg-gray-50 dark:bg-gray-800/30 p-4 rounded-2xl border border-gray-100 dark:border-gray-700">
+                      <div className="w-12 h-12 rounded-full bg-dark-orange/10 flex items-center justify-center shrink-0">
+                        <User className="w-6 h-6 text-dark-orange" />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="font-black text-charcoal dark:text-cream text-lg leading-tight truncate">{selectedOrder.recipientName || 'Khách hàng'}</p>
+                        <a href={`tel:${selectedOrder.recipientPhone}`} className="text-blue-500 font-bold text-sm mt-1 hover:underline block">
+                          {selectedOrder.recipientPhone}
+                        </a>
+                      </div>
+                    </div>
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-black text-charcoal/40 dark:text-cream/40 uppercase tracking-[0.2em] mb-3">Địa chỉ giao hàng</p>
+                    <div className="flex items-start gap-3 bg-gray-50 dark:bg-gray-800/30 p-4 rounded-2xl border border-gray-100 dark:border-gray-700">
+                      <MapPin className="w-5 h-5 text-dark-orange shrink-0 mt-0.5" />
+                      <p className="text-sm font-bold text-charcoal/80 dark:text-cream/80 leading-relaxed">{selectedOrder.deliveryAddress}</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <p className="text-[10px] font-black text-charcoal/40 dark:text-cream/40 uppercase tracking-[0.2em] mb-3">Thông tin bổ sung</p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="bg-[#FFF8F0] dark:bg-dark-orange/5 p-4 rounded-2xl border border-dark-orange/10">
+                      <p className="text-[10px] font-black text-dark-orange/60 uppercase tracking-widest mb-1">Thời gian đặt</p>
+                      <p className="text-sm font-black text-charcoal dark:text-cream">
+                        {new Date(selectedOrder.purchaseDate).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                        <span className="block text-[10px] opacity-60 font-bold">{new Date(selectedOrder.purchaseDate).toLocaleDateString('vi-VN')}</span>
+                      </p>
+                    </div>
+                    <div className="bg-[#FFF8F0] dark:bg-dark-orange/5 p-4 rounded-2xl border border-dark-orange/10">
+                      <p className="text-[10px] font-black text-dark-orange/60 uppercase tracking-widest mb-1">Thanh toán</p>
+                      <p className="text-sm font-black text-charcoal dark:text-cream uppercase tracking-tight truncate">
+                        {selectedOrder.paymentMethodName || 'Tiền mặt'}
+                      </p>
+                    </div>
+                  </div>
+                  {selectedOrder.note && (
+                    <div className="bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-900/30 p-4 rounded-2xl">
+                      <p className="text-[10px] font-black text-amber-600 uppercase tracking-widest mb-1">Ghi chú từ khách</p>
+                      <p className="text-sm font-bold text-amber-800 dark:text-amber-400 italic">"{selectedOrder.note}"</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Items Table */}
+              <div>
+                <div className="flex justify-between items-center mb-4">
+                  <p className="text-[10px] font-black text-charcoal/40 dark:text-cream/40 uppercase tracking-[0.2em]">Danh sách món ({selectedOrder.totalItems})</p>
+                </div>
+                <div className="border border-gray-100 dark:border-gray-800 rounded-3xl overflow-hidden shadow-sm">
+                  <table className="w-full text-left">
+                    <thead className="bg-gray-50 dark:bg-gray-800/50 text-[10px] font-black text-charcoal/40 dark:text-cream/40 uppercase tracking-widest border-b border-gray-100 dark:border-gray-800">
+                      <tr>
+                        <th className="px-6 py-4">Món ăn</th>
+                        <th className="px-6 py-4 text-center">SL</th>
+                        <th className="px-6 py-4 text-right">Đơn giá</th>
+                        <th className="px-6 py-4 text-right">Thành tiền</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-50 dark:divide-gray-800">
+                      {selectedOrder.items && selectedOrder.items.length > 0 ? (
+                        selectedOrder.items.map((item: any, idx: number) => (
+                          <tr key={idx} className="group hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
+                            <td className="px-6 py-4">
+                              <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-xl bg-gray-100 dark:bg-gray-800 overflow-hidden shrink-0 border border-gray-100 dark:border-gray-700">
+                                  {item.foodImage ? (
+                                    <img src={item.foodImage} alt={item.foodName} className="w-full h-full object-cover" />
+                                  ) : (
+                                    <div className="w-full h-full flex items-center justify-center text-gray-400">🥘</div>
+                                  )}
+                                </div>
+                                <p className="font-black text-charcoal dark:text-cream text-sm truncate max-w-[150px]">{item.foodName}</p>
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 text-center">
+                              <span className="px-3 py-1 bg-gray-100 dark:bg-gray-800 rounded-lg font-black text-sm">{item.quantity}</span>
+                            </td>
+                            <td className="px-6 py-4 text-right">
+                              <p className="text-sm font-bold text-charcoal/60 dark:text-cream/60">₫{item.price.toLocaleString('vi-VN')}</p>
+                            </td>
+                            <td className="px-6 py-4 text-right">
+                              <p className="text-sm font-black text-dark-orange">₫{item.total.toLocaleString('vi-VN')}</p>
+                            </td>
+                          </tr>
+                        ))
+                      ) : !isDetailLoading && (
+                        <tr>
+                          <td colSpan={4} className="px-6 py-12 text-center">
+                            <p className="text-sm font-bold text-charcoal/40 dark:text-cream/40 italic">Chưa có thông tin danh sách món...</p>
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                    <tfoot className="bg-cream/20 dark:bg-gray-800/30 border-t border-gray-100 dark:border-gray-800">
+                      <tr>
+                        <td colSpan={3} className="px-6 py-4 text-right text-xs font-black text-charcoal/40 dark:text-cream/40 uppercase tracking-widest">Tạm tính</td>
+                        <td className="px-6 py-4 text-right font-black text-sm text-charcoal dark:text-cream">₫{(selectedOrder.subTotal || 0).toLocaleString('vi-VN')}</td>
+                      </tr>
+                      {(selectedOrder.deliveryFee || 0) > 0 && (
+                        <tr>
+                          <td colSpan={3} className="px-6 py-2 text-right text-xs font-bold text-emerald-600/80 uppercase tracking-widest">Phí giao hàng</td>
+                          <td className="px-6 py-2 text-right font-bold text-sm text-emerald-600">+₫{selectedOrder.deliveryFee!.toLocaleString('vi-VN')}</td>
+                        </tr>
+                      )}
+                      {(selectedOrder.discount || 0) > 0 && (
+                        <tr>
+                          <td colSpan={3} className="px-6 py-2 text-right text-xs font-bold text-rose-500/80 uppercase tracking-widest">Giảm giá</td>
+                          <td className="px-6 py-2 text-right font-bold text-sm text-rose-500">-₫{selectedOrder.discount!.toLocaleString('vi-VN')}</td>
+                        </tr>
+                      )}
+                      <tr className="bg-dark-orange/5">
+                        <td colSpan={3} className="px-6 py-6 text-right text-sm font-black text-dark-orange uppercase tracking-widest">Tổng cộng</td>
+                        <td className="px-6 py-6 text-right font-black text-3xl text-dark-orange">
+                          <span className="no-underline">₫</span>{(selectedOrder.total || 0).toLocaleString('vi-VN')}
+                        </td>
+                      </tr>
+                    </tfoot>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="p-6 border-t border-dark-orange/10 bg-gray-50 dark:bg-gray-800/50 flex justify-end gap-3">
+              <button 
+                onClick={() => setSelectedOrder(null)}
+                className="px-8 py-3 rounded-2xl font-black text-charcoal/60 dark:text-cream/60 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 transition-all uppercase text-xs tracking-widest active:scale-95"
+              >
+                Đóng
+              </button>
+              {selectedOrder.status === OrderStatus.Pending && (
+                <button 
+                  onClick={() => { handleStatusUpdate(selectedOrder.id, OrderStatus.Confirmed); setSelectedOrder(null); }}
+                  className="px-10 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-black rounded-2xl transition-all shadow-lg shadow-emerald-600/20 uppercase text-xs tracking-widest active:scale-95"
+                >
+                  Xác nhận đơn
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

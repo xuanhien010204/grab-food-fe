@@ -63,7 +63,7 @@ export default function AdminLayout() {
       >
         <div className="p-6 flex flex-col gap-8">
           <div className="flex items-center gap-3">
-            <div className="bg-orange-600 rounded-lg p-2 flex items-center justify-center">
+            <div className="bg-dark-orange rounded-lg p-2 flex items-center justify-center">
               <span className="text-white text-2xl">🍜</span>
             </div>
             <div>
