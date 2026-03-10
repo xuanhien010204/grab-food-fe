@@ -8,7 +8,7 @@ import { adminApi, storeApi, foodTypeApi } from '../../../api/api';
 import type { StoreDto } from '../../../types/swagger';
 import { toast } from 'sonner';
 
-const PIE_COLORS = ['#FF7F00', '#3B82F6', '#10B981', '#6366F1', '#F59E0B', '#EF4444'];
+const PIE_COLORS = ['#C76E00', '#F59E0B', '#10B981', '#6366F1', '#EF4444', '#3B82F6'];
 
 export default function AdminDashboard() {
     const [pendingStores, setPendingStores] = useState<StoreDto[]>([]);
@@ -67,61 +67,91 @@ export default function AdminDashboard() {
     ].filter(d => d.value > 0);
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-8 bg-[#F5E6D3] min-h-screen p-6">
+
             {/* Header */}
             <div className="flex items-center justify-between">
                 <div>
-                    <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Dashboard Quản trị</h2>
-                    <p className="text-sm text-gray-500 mt-1">Tổng quan hệ thống</p>
+                    <h2 className="text-3xl font-semibold text-[#2E2E2E]">
+                        Dashboard 
+                    </h2>
+                    <p className="text-sm text-gray-500 mt-1">
+                        Tổng quan hệ thống
+                    </p>
                 </div>
-                <Button variant="outline" size="sm" onClick={fetchData} disabled={loading}>
+
+                <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={fetchData}
+                    disabled={loading}
+                    className="rounded-full border-orange-200 hover:bg-orange-50"
+                >
                     <RefreshCw className={`w-4 h-4 mr-1 ${loading ? 'animate-spin' : ''}`} />
                     Làm mới
                 </Button>
             </div>
 
             {/* SUMMARY CARDS */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+
                 {loading ? (
                     Array.from({ length: 3 }).map((_, i) => (
-                        <Card key={i} className="border-none shadow animate-pulse">
+                        <Card key={i} className="border-none shadow animate-pulse rounded-2xl">
                             <CardContent className="p-6 h-24" />
                         </Card>
                     ))
                 ) : (
                     <>
-                        <Card className="border-none shadow hover:shadow-md transition-shadow">
+                        <Card className="border-none shadow-md rounded-2xl hover:shadow-lg transition">
                             <CardContent className="p-6 flex items-center justify-between">
                                 <div>
-                                    <p className="text-sm font-medium text-gray-500">Tổng cửa hàng</p>
-                                    <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-1">{allStores.length}</h3>
-                                    <p className="text-xs text-gray-400 mt-1">{activeStores.length} đang hoạt động</p>
+                                    <p className="text-sm text-gray-500">Tổng cửa hàng</p>
+                                    <h3 className="text-2xl font-bold text-[#2E2E2E] mt-1">
+                                        {allStores.length}
+                                    </h3>
+                                    <p className="text-xs text-gray-400 mt-1">
+                                        {activeStores.length} đang hoạt động
+                                    </p>
                                 </div>
+
                                 <div className="p-3 rounded-full bg-green-100 text-green-600">
                                     <Store className="w-6 h-6" />
                                 </div>
                             </CardContent>
                         </Card>
-                        <Card className="border-none shadow hover:shadow-md transition-shadow">
+
+                        <Card className="border-none shadow-md rounded-2xl hover:shadow-lg transition">
                             <CardContent className="p-6 flex items-center justify-between">
                                 <div>
-                                    <p className="text-sm font-medium text-gray-500">Chờ phê duyệt</p>
-                                    <h3 className="text-2xl font-bold text-orange-600 mt-1">{pendingStores.length}</h3>
-                                    <p className="text-xs text-gray-400 mt-1">Cần xử lý</p>
+                                    <p className="text-sm text-gray-500">Chờ phê duyệt</p>
+                                    <h3 className="text-2xl font-bold text-[#C76E00] mt-1">
+                                        {pendingStores.length}
+                                    </h3>
+                                    <p className="text-xs text-gray-400 mt-1">
+                                        Cần xử lý
+                                    </p>
                                 </div>
+
                                 <div className="p-3 rounded-full bg-orange-100 text-orange-600">
                                     <Store className="w-6 h-6" />
                                 </div>
                             </CardContent>
                         </Card>
-                        <Card className="border-none shadow hover:shadow-md transition-shadow">
+
+                        <Card className="border-none shadow-md rounded-2xl hover:shadow-lg transition">
                             <CardContent className="p-6 flex items-center justify-between">
                                 <div>
-                                    <p className="text-sm font-medium text-gray-500">Danh mục món ăn</p>
-                                    <h3 className="text-2xl font-bold text-gray-900 dark:text-white mt-1">{foodTypes.length}</h3>
-                                    <p className="text-xs text-gray-400 mt-1">Loại món trong hệ thống</p>
+                                    <p className="text-sm text-gray-500">Danh mục món ăn</p>
+                                    <h3 className="text-2xl font-bold text-[#2E2E2E] mt-1">
+                                        {foodTypes.length}
+                                    </h3>
+                                    <p className="text-xs text-gray-400 mt-1">
+                                        Loại món trong hệ thống
+                                    </p>
                                 </div>
-                                <div className="p-3 rounded-full bg-blue-100 text-blue-600">
+
+                                <div className="p-3 rounded-full bg-orange-100 text-[#C76E00]">
                                     <Tag className="w-6 h-6" />
                                 </div>
                             </CardContent>
@@ -130,22 +160,32 @@ export default function AdminDashboard() {
                 )}
             </div>
 
+            {/* CHARTS */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {/* STORE STATUS PIE CHART */}
+
                 <div className="lg:col-span-2">
-                    <Card className="shadow-sm h-full border-none">
+                    <Card className="shadow-md rounded-2xl border-none h-full">
                         <CardHeader>
                             <CardTitle>Trạng thái cửa hàng</CardTitle>
                         </CardHeader>
+
                         <CardContent className="h-[280px]">
                             {loading ? (
                                 <div className="flex items-center justify-center h-full">
-                                    <Loader2 className="w-8 h-8 animate-spin text-orange-500" />
+                                    <Loader2 className="w-8 h-8 animate-spin text-[#C76E00]" />
                                 </div>
-                            ) : storeStatusData.length > 0 ? (
+                            ) : (
                                 <ResponsiveContainer width="100%" height="100%">
                                     <PieChart>
-                                        <Pie data={storeStatusData} cx="50%" cy="50%" innerRadius={60} outerRadius={100} paddingAngle={4} dataKey="value">
+                                        <Pie
+                                            data={storeStatusData}
+                                            cx="50%"
+                                            cy="50%"
+                                            innerRadius={60}
+                                            outerRadius={100}
+                                            paddingAngle={4}
+                                            dataKey="value"
+                                        >
                                             {storeStatusData.map((entry, index) => (
                                                 <Cell key={`cell-${index}`} fill={entry.color} />
                                             ))}
@@ -154,28 +194,34 @@ export default function AdminDashboard() {
                                         <Tooltip formatter={(value, name) => [`${value} cửa hàng`, name]} />
                                     </PieChart>
                                 </ResponsiveContainer>
-                            ) : (
-                                <div className="flex items-center justify-center h-full text-gray-400">Chưa có dữ liệu</div>
                             )}
                         </CardContent>
                     </Card>
                 </div>
 
-                {/* CATEGORY PIE CHART */}
                 <div>
-                    <Card className="shadow-sm h-full border-none">
+                    <Card className="shadow-md rounded-2xl border-none h-full">
                         <CardHeader>
                             <CardTitle>Danh mục món ăn</CardTitle>
                         </CardHeader>
+
                         <CardContent className="h-[280px]">
                             {loading ? (
                                 <div className="flex items-center justify-center h-full">
-                                    <Loader2 className="w-8 h-8 animate-spin text-orange-500" />
+                                    <Loader2 className="w-8 h-8 animate-spin text-[#C76E00]" />
                                 </div>
-                            ) : categoryChartData.length > 0 ? (
+                            ) : (
                                 <ResponsiveContainer width="100%" height="100%">
                                     <PieChart>
-                                        <Pie data={categoryChartData} cx="50%" cy="50%" innerRadius={40} outerRadius={70} paddingAngle={3} dataKey="value">
+                                        <Pie
+                                            data={categoryChartData}
+                                            cx="50%"
+                                            cy="50%"
+                                            innerRadius={40}
+                                            outerRadius={70}
+                                            paddingAngle={3}
+                                            dataKey="value"
+                                        >
                                             {categoryChartData.map((entry, index) => (
                                                 <Cell key={`cell-${index}`} fill={entry.color} />
                                             ))}
@@ -184,8 +230,6 @@ export default function AdminDashboard() {
                                         <Tooltip />
                                     </PieChart>
                                 </ResponsiveContainer>
-                            ) : (
-                                <div className="flex items-center justify-center h-full text-gray-400">Chưa có danh mục</div>
                             )}
                         </CardContent>
                     </Card>
@@ -193,15 +237,17 @@ export default function AdminDashboard() {
             </div>
 
             {/* PENDING STORES */}
-            <Card className="border-none shadow-sm">
+            <Card className="border-none shadow-md rounded-2xl">
                 <CardHeader className="flex flex-row items-center justify-between">
                     <CardTitle>⏳ Cửa hàng chờ phê duyệt</CardTitle>
                     <Badge variant="warning">{pendingStores.length} chờ duyệt</Badge>
                 </CardHeader>
+
                 <CardContent>
+
                     {loading ? (
                         <div className="flex justify-center py-8">
-                            <Loader2 className="w-6 h-6 animate-spin text-orange-500" />
+                            <Loader2 className="w-6 h-6 animate-spin text-[#C76E00]" />
                         </div>
                     ) : pendingStores.length === 0 ? (
                         <div className="text-center py-8 text-gray-500">
@@ -210,35 +256,53 @@ export default function AdminDashboard() {
                         </div>
                     ) : (
                         <div className="space-y-4">
+
                             {pendingStores.map((store) => (
-                                <div key={store.id} className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
+
+                                <div
+                                    key={store.id}
+                                    className="flex items-center justify-between p-4 bg-white rounded-xl border border-orange-100 shadow-sm"
+                                >
+
                                     <div>
                                         <div className="flex items-center space-x-3">
-                                            <h4 className="font-bold text-gray-900 dark:text-white">{store.name || 'Không có tên'}</h4>
-                                            <Badge variant="warning">Pending</Badge>
+                                            <h4 className="font-semibold text-[#2E2E2E]">
+                                                {store.name || 'Không có tên'}
+                                            </h4>
+
+                                            <Badge variant="warning">
+                                                Pending
+                                            </Badge>
                                         </div>
-                                        <p className="text-sm text-gray-500 mt-1">{store.address || 'N/A'} • {store.phone || 'N/A'}</p>
+
+                                        <p className="text-sm text-gray-500 mt-1">
+                                            {store.address || 'N/A'} • {store.phone || 'N/A'}
+                                        </p>
                                     </div>
-                                    <div className="flex space-x-2">
-                                        <Button
-                                            size="sm"
-                                            className="bg-green-500 hover:bg-green-600 text-white"
-                                            onClick={() => handleApprove(store.id)}
-                                            disabled={approvingId === store.id}
-                                        >
-                                            {approvingId === store.id
-                                                ? <Loader2 className="w-4 h-4 mr-1 animate-spin" />
-                                                : <Check className="w-4 h-4 mr-1" />
-                                            }
-                                            Approve
-                                        </Button>
-                                    </div>
+
+                                    <Button
+                                        size="sm"
+                                        className="bg-[#C76E00] hover:bg-[#b86400] text-white rounded-full"
+                                        onClick={() => handleApprove(store.id)}
+                                        disabled={approvingId === store.id}
+                                    >
+                                        {approvingId === store.id
+                                            ? <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+                                            : <Check className="w-4 h-4 mr-1" />
+                                        }
+                                        Approve
+                                    </Button>
+
                                 </div>
+
                             ))}
+
                         </div>
                     )}
+
                 </CardContent>
             </Card>
+
         </div>
     );
 }
