@@ -165,8 +165,8 @@ export default function VoucherManagement() {
         <div className="space-y-6">
             <div className="flex justify-between items-center">
                 <div>
-                    <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Voucher Management</h1>
-                    <p className="text-gray-600 dark:text-gray-400 mt-1">Manage discount codes</p>
+                    <h1 className="text-3xl font-bold text-gray-900 dark:text-black">Quản lý voucher</h1>
+                    <p className="text-gray-600 dark:text-gray-400 mt-1">Quản lý mã giảm giá</p>
                 </div>
                 <button
                     onClick={() => { resetForm(); setIsModalOpen(true); }}
