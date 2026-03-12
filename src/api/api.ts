@@ -335,15 +335,10 @@ export const adminApi = {
     // Stores Management
     getPendingStores: () => api.get<StoreDto[]>('/api/users/pending-stores'),
     approveStore: (storeId: number) => api.put(`/api/users/approve-store/${storeId}`),
-<<<<<<< HEAD
-    lockUser: (userId: number) => api.put(`/api/users/lock/${userId}`),   // fixed missing /
+    lockUser: (userId: number) => api.put(`/api/users/lock/${userId}`),
     getAllUsers: () => api.get<any[]>('/api/users'),
-=======
->>>>>>> origin/Trieu/fix-test-v3
     getStores: () => api.get<StoreDto[]>('/api/stores'),
     getFoodTypes: () => api.get('/api/food-types'),
-    // User Management
-    lockUser: (userId: number) => api.put(`/api/users/lock/${userId}`),
 };
 
 export const chatApi = {
