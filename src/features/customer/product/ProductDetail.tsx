@@ -49,7 +49,7 @@ export default function ProductDetail() {
                 if (items.length > 0) {
                     const sum = items.reduce((acc: number, r: any) => acc + (r.rating || r.star || 0), 0);
                     setAvgRating(sum / items.length);
-                } else if (product.food.averageRating) {
+                } else if (product?.food?.averageRating) {
                     setAvgRating(product.food.averageRating);
                 }
             }).catch(() => { });

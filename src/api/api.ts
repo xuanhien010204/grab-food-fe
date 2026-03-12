@@ -59,8 +59,8 @@ api.interceptors.response.use((response) => {
             const rawMsg = data.message || data.error || data.Message || (typeof data === 'string' ? data : '');
             
             // Filter out technical .NET/Backend exception names
-            if (rawMsg.includes('Exception') || rawMsg.includes('BadRequestException') || rawMsg.includes('was thrown')) {
-                errorMessage = "Dữ liệu không hợp lệ hoặc không thể thực hiện hành động này.";
+            if (rawMsg.includes('Exception') || rawMsg.includes('BadRequestException') || rawMsg.includes('was thrown') || rawMsg.includes('unexpected error')) {
+                errorMessage = "Hệ thống đang gặp sự cố hoặc dữ liệu không hợp lệ. Vui lòng thử lại sau.";
             } else if (rawMsg) {
                 errorMessage = rawMsg;
             }
@@ -334,6 +334,7 @@ export const adminApi = {
     getPendingStores: () => api.get<StoreDto[]>('/api/users/pending-stores'),
     approveStore: (storeId: number) => api.put(`/api/users/approve-store/${storeId}`),
     lockUser: (userId: number) => api.put(`/api/users/lock/${userId}`),   // fixed missing /
+    getAllUsers: () => api.get<any[]>('/api/users'),
     getStores: () => api.get<StoreDto[]>('/api/stores'),
     getFoodTypes: () => api.get('/api/food-types'),
 };

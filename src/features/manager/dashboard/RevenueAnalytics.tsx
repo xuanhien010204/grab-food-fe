@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { TrendingUp, ShoppingBag, DollarSign, RefreshCw, Loader2, PackageCheck, Info, ArrowUpRight } from 'lucide-react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend, AreaChart, Area } from 'recharts';
+import { XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend, AreaChart, Area } from 'recharts';
 import { userApi, storeApi, orderApi } from '../../../api/api';
 import { OrderStatus, OrderStatusName } from '../../../types/swagger';
 import type { OrderDto } from '../../../types/swagger';
