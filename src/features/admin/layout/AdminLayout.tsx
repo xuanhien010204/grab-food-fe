@@ -8,7 +8,9 @@ import {
   Menu,
   X,
   Ticket,
-  LogOut
+  LogOut,
+  Banknote,
+  Users
 } from 'lucide-react';
 import { cn } from '../../../lib/utils';
 import { authStorage } from '../../../utils/auth';
@@ -17,6 +19,7 @@ import { userApi, adminApi } from '../../../api/api';
 export default function AdminLayout() {
   const [isSidebarOpen, setSidebarOpen] = useState(true);
   const [pendingStoreCount, setPendingStoreCount] = useState(0);
+  const [pendingWithdrawalCount, setPendingWithdrawalCount] = useState(0);
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -29,6 +32,11 @@ export default function AdminLayout() {
         setPendingStoreCount(data.length);
       })
       .catch(() => { });
+    // Load pending withdrawal count from localStorage
+    try {
+      const reqs = JSON.parse(localStorage.getItem('withdrawal_requests') || '[]');
+      setPendingWithdrawalCount(reqs.filter((r: any) => r.status === 'pending').length);
+    } catch { }
   }, [location.pathname]);
 
   const handleLogout = async () => {
@@ -40,10 +48,12 @@ export default function AdminLayout() {
 
   const MENU_ITEMS = [
     { name: 'Bảng điều khiển', path: '/admin/dashboard', icon: LayoutDashboard },
+    { name: 'Quản lý người dùng', path: '/admin/users', icon: Users },
     { name: 'Quản lý cửa hàng', path: '/admin/stores', icon: Store, badge: pendingStoreCount },
     { name: 'Quản lý loại thực phẩm', path: '/admin/categories', icon: Tag },
     { name: 'Quản lý voucher', path: '/admin/vouchers', icon: Ticket },
     { name: 'Lịch sử giao dịch', path: '/admin/transactions', icon: Receipt },
+    { name: 'Rút tiền Manager', path: '/admin/withdrawals', icon: Banknote, badge: pendingWithdrawalCount },
   ];
 
   const getPageTitle = () => {

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Clock, User, Check, X, RefreshCw, MapPin, TrendingUp } from 'lucide-react';
+import { Clock, User, Check, X, Phone, RefreshCw, MapPin, Eye, Receipt, CreditCard, StickyNote, ChevronRight, TrendingUp } from 'lucide-react';
 import { orderApi, userApi, storeApi } from '../../../api/api';
 import type { OrderDto } from '../../../types/swagger';
 import { OrderStatus, OrderStatusName } from '../../../types/swagger';
@@ -22,7 +22,21 @@ const OrderDashboard = () => {
   const [isOpen, setIsOpen] = useState(true);
   const [storeId, setStoreId] = useState<number | null>(null);
   const [selectedOrder, setSelectedOrder] = useState<OrderDto | null>(null);
-  const [isDetailLoading, setIsDetailLoading] = useState(false);
+  const [isLoadingDetail, setIsLoadingDetail] = useState(false);
+
+  const openOrderDetail = async (order: OrderDto) => {
+    setSelectedOrder(order); // show modal immediately with basic info
+    setIsLoadingDetail(true);
+    try {
+      const res = await orderApi.getById(order.id);
+      setSelectedOrder(res.data);
+    } catch {
+      // keep the basic order if detail fetch fails
+      toast.error("Không thể tải chi tiết món ăn");
+    } finally {
+      setIsLoadingDetail(false);
+    }
+  };
 
   // Get manager's store ID from profile + stores
   useEffect(() => {
@@ -79,22 +93,6 @@ const OrderDashboard = () => {
     const reason = prompt('Lý do từ chối đơn hàng:');
     if (!reason) return;
     handleStatusUpdate(orderId, OrderStatus.Cancelled, reason);
-  };
-
-  const handleViewDetail = async (order: OrderDto) => {
-    setSelectedOrder(order); // Show modal immediately with partial data
-    setIsDetailLoading(true);
-    try {
-      const res = await orderApi.getById(order.id);
-      if (res.data) {
-        setSelectedOrder(res.data);
-      }
-    } catch (error) {
-      console.error("Failed to fetch order details", error);
-      toast.error("Không thể tải chi tiết món ăn");
-    } finally {
-      setIsDetailLoading(false);
-    }
   };
 
   const filteredOrders = orders.filter(o => o.status === activeTab);
@@ -233,13 +231,13 @@ const OrderDashboard = () => {
 
                 {/* Interactive Items Summary */}
                 <button 
-                  onClick={() => handleViewDetail(order)}
+                  onClick={() => openOrderDetail(order)}
                   className="w-full text-left bg-gray-50/50 dark:bg-gray-800/40 hover:bg-white dark:hover:bg-gray-800 rounded-xl border border-dashed border-gray-200 dark:border-gray-700 p-3 space-y-2 transition-all group/btn hover:border-dark-orange/20"
                 >
                   <div className="flex justify-between items-center mb-1">
                     <p className="text-[8px] font-black text-charcoal/40 dark:text-cream/40 uppercase tracking-[0.2em]">Xem đơn hàng</p>
                     <span className="text-[9px] font-black text-dark-orange uppercase group-hover/btn:translate-x-1 transition-transform flex items-center gap-1.5 underline decoration-dark-orange/10 decoration-2 underline-offset-2">
-                      Chi tiết →
+                       Chi tiết →
                     </span>
                   </div>
                   <div className="space-y-1.5">
@@ -276,7 +274,7 @@ const OrderDashboard = () => {
                 </div>
               </div>
 
-              {/* Compact Action Buttons */}
+              {/* Action Buttons */}
               <div className="p-3 bg-gray-50/50 dark:bg-white/5 border-t border-gray-100 dark:border-gray-800 flex gap-2">
                 {activeTab === OrderStatus.Pending && (
                   <>
@@ -333,20 +331,23 @@ const OrderDashboard = () => {
           <div className="col-span-full py-12 text-center">
             <Clock className="w-16 h-16 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
             <p className="text-gray-500 dark:text-gray-400 font-bold text-lg">Không có đơn hàng ở trạng thái này</p>
-            {isLoading && <p className="text-sm text-gray-400 mt-2">Đang cập nhật...</p>}
+            {isLoading && <p className="text-sm text-gray-400 mt-2">Đang tải...</p>}
           </div>
         )}
       </div>
 
-      {/* Detail Modal */}
+      {/* DETAIL MODAL */}
       {selectedOrder && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
-          <div className="bg-white dark:bg-charcoal w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden border border-dark-orange/10 flex flex-col max-h-[90vh]">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300" onClick={() => setSelectedOrder(null)}>
+          <div className="bg-white dark:bg-charcoal w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden border border-dark-orange/10 flex flex-col max-h-[90vh]" onClick={e => e.stopPropagation()}>
             {/* Modal Header */}
             <div className="p-6 bg-cream/30 dark:bg-gray-800/50 border-b border-dark-orange/10 flex justify-between items-center">
               <div>
                 <h2 className="text-2xl font-black text-charcoal dark:text-cream">Chi tiết đơn hàng</h2>
                 <p className="text-dark-orange font-bold text-sm">#{selectedOrder.id.toUpperCase()}</p>
+                <p className="text-charcoal/40 dark:text-cream/40 text-[10px] font-black uppercase tracking-widest mt-1">
+                  {new Date(selectedOrder.purchaseDate).toLocaleString('vi-VN')}
+                </p>
               </div>
               <button 
                 onClick={() => setSelectedOrder(null)}
@@ -359,7 +360,7 @@ const OrderDashboard = () => {
 
             {/* Modal Body */}
             <div className="p-6 overflow-y-auto space-y-8 custom-scrollbar relative">
-              {isDetailLoading && (
+              {isLoadingDetail && (
                 <div className="absolute inset-0 z-10 bg-white/60 dark:bg-charcoal/60 backdrop-blur-[2px] flex items-center justify-center">
                   <div className="flex flex-col items-center gap-3">
                     <RefreshCw className="w-10 h-10 text-dark-orange animate-spin" />
@@ -368,25 +369,27 @@ const OrderDashboard = () => {
                 </div>
               )}
               
-              {/* Order Info Grid */}
+              {/* Info Grid */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <div className="space-y-6">
                   <div>
-                    <p className="text-[10px] font-black text-charcoal/40 dark:text-cream/40 uppercase tracking-[0.2em] mb-3">Thông tin khách hàng</p>
+                    <p className="text-[10px] font-black text-charcoal/40 dark:text-cream/40 uppercase tracking-[0.2em] mb-3">Khách hàng</p>
                     <div className="flex items-center gap-4 bg-gray-50 dark:bg-gray-800/30 p-4 rounded-2xl border border-gray-100 dark:border-gray-700">
                       <div className="w-12 h-12 rounded-full bg-dark-orange/10 flex items-center justify-center shrink-0">
                         <User className="w-6 h-6 text-dark-orange" />
                       </div>
                       <div className="min-w-0">
                         <p className="font-black text-charcoal dark:text-cream text-lg leading-tight truncate">{selectedOrder.recipientName || 'Khách hàng'}</p>
-                        <a href={`tel:${selectedOrder.recipientPhone}`} className="text-blue-500 font-bold text-sm mt-1 hover:underline block">
-                          {selectedOrder.recipientPhone}
-                        </a>
+                        {selectedOrder.recipientPhone && (
+                          <a href={`tel:${selectedOrder.recipientPhone}`} className="text-blue-500 font-bold text-sm mt-1 hover:underline flex items-center gap-2">
+                             <Phone className="w-3 h-3" /> {selectedOrder.recipientPhone}
+                          </a>
+                        )}
                       </div>
                     </div>
                   </div>
                   <div>
-                    <p className="text-[10px] font-black text-charcoal/40 dark:text-cream/40 uppercase tracking-[0.2em] mb-3">Địa chỉ giao hàng</p>
+                    <p className="text-[10px] font-black text-charcoal/40 dark:text-cream/40 uppercase tracking-[0.2em] mb-3">Địa chỉ nhận hàng</p>
                     <div className="flex items-start gap-3 bg-gray-50 dark:bg-gray-800/30 p-4 rounded-2xl border border-gray-100 dark:border-gray-700">
                       <MapPin className="w-5 h-5 text-dark-orange shrink-0 mt-0.5" />
                       <p className="text-sm font-bold text-charcoal/80 dark:text-cream/80 leading-relaxed">{selectedOrder.deliveryAddress}</p>
@@ -395,25 +398,24 @@ const OrderDashboard = () => {
                 </div>
 
                 <div className="space-y-4">
-                  <p className="text-[10px] font-black text-charcoal/40 dark:text-cream/40 uppercase tracking-[0.2em] mb-3">Thông tin bổ sung</p>
+                  <p className="text-[10px] font-black text-charcoal/40 dark:text-cream/40 uppercase tracking-[0.2em] mb-3">Thanh toán & Ghi chú</p>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="bg-[#FFF8F0] dark:bg-dark-orange/5 p-4 rounded-2xl border border-dark-orange/10">
-                      <p className="text-[10px] font-black text-dark-orange/60 uppercase tracking-widest mb-1">Thời gian đặt</p>
-                      <p className="text-sm font-black text-charcoal dark:text-cream">
-                        {new Date(selectedOrder.purchaseDate).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
-                        <span className="block text-[10px] opacity-60 font-bold">{new Date(selectedOrder.purchaseDate).toLocaleDateString('vi-VN')}</span>
+                      <p className="text-[10px] font-black text-dark-orange/60 uppercase tracking-widest mb-1 flex items-center gap-1.5"><CreditCard className="w-3 h-3" /> Hình thức</p>
+                      <p className="text-sm font-black text-charcoal dark:text-cream uppercase tracking-tight truncate">
+                        {selectedOrder.paymentMethodName || 'Tiền mặt'}
                       </p>
                     </div>
                     <div className="bg-[#FFF8F0] dark:bg-dark-orange/5 p-4 rounded-2xl border border-dark-orange/10">
-                      <p className="text-[10px] font-black text-dark-orange/60 uppercase tracking-widest mb-1">Thanh toán</p>
-                      <p className="text-sm font-black text-charcoal dark:text-cream uppercase tracking-tight truncate">
-                        {selectedOrder.paymentMethodName || 'Tiền mặt'}
+                      <p className="text-[10px] font-black text-dark-orange/60 uppercase tracking-widest mb-1">Trạng thái</p>
+                      <p className={`text-sm font-black uppercase tracking-tight truncate ${selectedOrder.paymentStatus === 1 ? 'text-emerald-500' : 'text-amber-500'}`}>
+                        {selectedOrder.paymentStatusName}
                       </p>
                     </div>
                   </div>
                   {selectedOrder.note && (
                     <div className="bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-900/30 p-4 rounded-2xl">
-                      <p className="text-[10px] font-black text-amber-600 uppercase tracking-widest mb-1">Ghi chú từ khách</p>
+                      <p className="text-[10px] font-black text-amber-600 uppercase tracking-widest mb-1 flex items-center gap-1.5"><StickyNote className="w-3 h-3" /> Ghi chú</p>
                       <p className="text-sm font-bold text-amber-800 dark:text-amber-400 italic">"{selectedOrder.note}"</p>
                     </div>
                   )}
@@ -422,9 +424,7 @@ const OrderDashboard = () => {
 
               {/* Items Table */}
               <div>
-                <div className="flex justify-between items-center mb-4">
-                  <p className="text-[10px] font-black text-charcoal/40 dark:text-cream/40 uppercase tracking-[0.2em]">Danh sách món ({selectedOrder.totalItems})</p>
-                </div>
+                <p className="text-[10px] font-black text-charcoal/40 dark:text-cream/40 uppercase tracking-[0.2em] mb-4">Danh sách món ({selectedOrder.totalItems})</p>
                 <div className="border border-gray-100 dark:border-gray-800 rounded-3xl overflow-hidden shadow-sm">
                   <table className="w-full text-left">
                     <thead className="bg-gray-50 dark:bg-gray-800/50 text-[10px] font-black text-charcoal/40 dark:text-cream/40 uppercase tracking-widest border-b border-gray-100 dark:border-gray-800">
@@ -436,61 +436,53 @@ const OrderDashboard = () => {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-50 dark:divide-gray-800">
-                      {selectedOrder.items && selectedOrder.items.length > 0 ? (
-                        selectedOrder.items.map((item: any, idx: number) => (
-                          <tr key={idx} className="group hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
-                            <td className="px-6 py-4">
-                              <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-xl bg-gray-100 dark:bg-gray-800 overflow-hidden shrink-0 border border-gray-100 dark:border-gray-700">
-                                  {item.foodImage ? (
-                                    <img src={item.foodImage} alt={item.foodName} className="w-full h-full object-cover" />
-                                  ) : (
-                                    <div className="w-full h-full flex items-center justify-center text-gray-400">🥘</div>
-                                  )}
-                                </div>
-                                <p className="font-black text-charcoal dark:text-cream text-sm truncate max-w-[150px]">{item.foodName}</p>
+                      {selectedOrder.items?.map((item: any, idx: number) => (
+                        <tr key={idx} className="group hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
+                          <td className="px-6 py-4">
+                            <div className="flex items-center gap-3">
+                              <div className="w-10 h-10 rounded-xl bg-gray-100 dark:bg-gray-800 overflow-hidden shrink-0 border border-gray-100 dark:border-gray-700">
+                                {item.foodImage ? (
+                                  <img src={item.foodImage} alt={item.foodName} className="w-full h-full object-cover" />
+                                ) : (
+                                  <div className="w-full h-full flex items-center justify-center text-gray-400">🥘</div>
+                                )}
                               </div>
-                            </td>
-                            <td className="px-6 py-4 text-center">
-                              <span className="px-3 py-1 bg-gray-100 dark:bg-gray-800 rounded-lg font-black text-sm">{item.quantity}</span>
-                            </td>
-                            <td className="px-6 py-4 text-right">
-                              <p className="text-sm font-bold text-charcoal/60 dark:text-cream/60">₫{item.price.toLocaleString('vi-VN')}</p>
-                            </td>
-                            <td className="px-6 py-4 text-right">
-                              <p className="text-sm font-black text-dark-orange">₫{item.total.toLocaleString('vi-VN')}</p>
-                            </td>
-                          </tr>
-                        ))
-                      ) : !isDetailLoading && (
-                        <tr>
-                          <td colSpan={4} className="px-6 py-12 text-center">
-                            <p className="text-sm font-bold text-charcoal/40 dark:text-cream/40 italic">Chưa có thông tin danh sách món...</p>
+                              <p className="font-black text-charcoal dark:text-cream text-sm truncate max-w-[150px]">{item.foodName}</p>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 text-center">
+                            <span className="px-3 py-1 bg-gray-100 dark:bg-gray-800 rounded-lg font-black text-sm">{item.quantity}</span>
+                          </td>
+                          <td className="px-6 py-4 text-right">
+                            <p className="text-sm font-bold text-charcoal/60 dark:text-cream/60">₫{item.price.toLocaleString('vi-VN')}</p>
+                          </td>
+                          <td className="px-6 py-4 text-right">
+                            <p className="text-sm font-black text-dark-orange">₫{item.total.toLocaleString('vi-VN')}</p>
                           </td>
                         </tr>
-                      )}
+                      ))}
                     </tbody>
                     <tfoot className="bg-cream/20 dark:bg-gray-800/30 border-t border-gray-100 dark:border-gray-800">
                       <tr>
-                        <td colSpan={3} className="px-6 py-4 text-right text-xs font-black text-charcoal/40 dark:text-cream/40 uppercase tracking-widest">Tạm tính</td>
-                        <td className="px-6 py-4 text-right font-black text-sm text-charcoal dark:text-cream">₫{(selectedOrder.subTotal || 0).toLocaleString('vi-VN')}</td>
+                        <td colSpan={3} className="px-6 py-3 text-right text-[10px] font-black text-charcoal/40 dark:text-cream/40 uppercase tracking-widest">Tạm tính</td>
+                        <td className="px-6 py-3 text-right font-black text-sm text-charcoal dark:text-cream">₫{(selectedOrder.subTotal || 0).toLocaleString('vi-VN')}</td>
                       </tr>
                       {(selectedOrder.deliveryFee || 0) > 0 && (
                         <tr>
-                          <td colSpan={3} className="px-6 py-2 text-right text-xs font-bold text-emerald-600/80 uppercase tracking-widest">Phí giao hàng</td>
+                          <td colSpan={3} className="px-6 py-2 text-right text-[10px] font-black text-emerald-600/80 uppercase tracking-widest">Phí giao hàng</td>
                           <td className="px-6 py-2 text-right font-bold text-sm text-emerald-600">+₫{selectedOrder.deliveryFee!.toLocaleString('vi-VN')}</td>
                         </tr>
                       )}
                       {(selectedOrder.discount || 0) > 0 && (
                         <tr>
-                          <td colSpan={3} className="px-6 py-2 text-right text-xs font-bold text-rose-500/80 uppercase tracking-widest">Giảm giá</td>
+                          <td colSpan={3} className="px-6 py-2 text-right text-[10px] font-black text-rose-500/80 uppercase tracking-widest">Giảm giá</td>
                           <td className="px-6 py-2 text-right font-bold text-sm text-rose-500">-₫{selectedOrder.discount!.toLocaleString('vi-VN')}</td>
                         </tr>
                       )}
                       <tr className="bg-dark-orange/5">
                         <td colSpan={3} className="px-6 py-6 text-right text-sm font-black text-dark-orange uppercase tracking-widest">Tổng cộng</td>
                         <td className="px-6 py-6 text-right font-black text-3xl text-dark-orange">
-                          <span className="no-underline">₫</span>{(selectedOrder.total || 0).toLocaleString('vi-VN')}
+                          ₫{(selectedOrder.total || 0).toLocaleString('vi-VN')}
                         </td>
                       </tr>
                     </tfoot>
@@ -508,12 +500,20 @@ const OrderDashboard = () => {
                 Đóng
               </button>
               {selectedOrder.status === OrderStatus.Pending && (
-                <button 
-                  onClick={() => { handleStatusUpdate(selectedOrder.id, OrderStatus.Confirmed); setSelectedOrder(null); }}
-                  className="px-10 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-black rounded-2xl transition-all shadow-lg shadow-emerald-600/20 uppercase text-xs tracking-widest active:scale-95"
-                >
-                  Xác nhận đơn
-                </button>
+                <>
+                  <button 
+                    onClick={() => { handleStatusUpdate(selectedOrder.id, OrderStatus.Confirmed); setSelectedOrder(null); }}
+                    className="px-10 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-black rounded-2xl transition-all shadow-lg shadow-emerald-600/20 uppercase text-xs tracking-widest active:scale-95 flex items-center gap-2"
+                  >
+                    <Check className="w-4 h-4" /> Xác nhận
+                  </button>
+                  <button 
+                    onClick={() => { handleReject(selectedOrder.id); setSelectedOrder(null); }}
+                    className="px-10 py-3 bg-rose-600 hover:bg-rose-700 text-white font-black rounded-2xl transition-all shadow-lg shadow-rose-600/20 uppercase text-xs tracking-widest active:scale-95 flex items-center gap-2"
+                  >
+                    <X className="w-4 h-4" /> Từ chối
+                  </button>
+                </>
               )}
             </div>
           </div>
