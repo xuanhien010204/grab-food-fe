@@ -1,8 +1,8 @@
 import { Outlet, Link, useLocation } from 'react-router-dom';
-import { Home, ShoppingCart, Wallet, Clock, UserCircle, Bell } from 'lucide-react';
+import { Home, ShoppingCart, Clock, UserCircle, Bell, MessageCircle } from 'lucide-react';
 import { cn } from '../../../lib/utils';
 import { useEffect, useState } from 'react';
-import { userApi, notificationApi } from '../../../api/api';
+import { userApi, notificationApi, chatApi } from '../../../api/api';
 import { authStorage } from '../../../utils/auth';
 
 function countCartItems(orderList: Record<string, any>): number {
@@ -16,6 +16,7 @@ export default function CustomerLayout() {
         return cached ? parseInt(cached) : 0;
     });
     const [notifCount, setNotifCount] = useState(0);
+    const [chatUnread, setChatUnread] = useState(0);
 
     useEffect(() => {
         const token = authStorage.getToken();
@@ -42,12 +43,33 @@ export default function CustomerLayout() {
     useEffect(() => {
         const token = authStorage.getToken();
         if (!token) return;
-        notificationApi.getUnreadCount()
-            .then(res => {
-                const data = res.data as any;
-                setNotifCount(typeof data === 'number' ? data : (data?.count || data?.unreadCount || 0));
-            })
-            .catch(() => { });
+        const fetchCount = () => {
+            notificationApi.getUnreadCount()
+                .then(res => {
+                    const data = res.data as any;
+                    setNotifCount(typeof data === 'number' ? data : (data?.count || data?.unreadCount || 0));
+                })
+                .catch(() => { });
+        };
+        fetchCount();
+        const interval = setInterval(fetchCount, 60_000); // refresh every 60s
+        return () => clearInterval(interval);
+    }, []);
+
+    useEffect(() => {
+        const token = authStorage.getToken();
+        if (!token) return;
+        const fetchChatUnread = () => {
+            chatApi.getUnreadCount()
+                .then(res => {
+                    const data = res.data as any;
+                    setChatUnread(typeof data === 'number' ? data : (data?.count || data?.unreadCount || 0));
+                })
+                .catch(() => { });
+        };
+        fetchChatUnread();
+        const interval = setInterval(fetchChatUnread, 30_000);
+        return () => clearInterval(interval);
     }, []);
 
     const isActive = (path: string) => path === '/'
@@ -57,7 +79,7 @@ export default function CustomerLayout() {
     const navItems = [
         { to: '/', icon: Home, label: 'Trang chủ' },
         { to: '/cart', icon: ShoppingCart, label: 'Giỏ hàng', badge: cartCount },
-        { to: '/wallet', icon: Wallet, label: 'Ví' },
+        { to: '/chat', icon: MessageCircle, label: 'Chat', badge: chatUnread },
         { to: '/notifications', icon: Bell, label: 'Thông báo', badge: notifCount },
         { to: '/orders', icon: Clock, label: 'Đơn hàng' },
         { to: '/profile', icon: UserCircle, label: 'Tài khoản' },

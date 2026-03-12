@@ -1,13 +1,28 @@
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
-import { BarChart3, ClipboardList, Store, LogOut, Search, Bell, User, Menu, MessageSquare, Building2, TrendingUp, Ticket } from 'lucide-react';
-import { useState } from 'react';
+import { BarChart3, ClipboardList, Store, LogOut, Search, Bell, User, Menu, MessageSquare, Building2, TrendingUp, Ticket, Wallet, MessageCircle } from 'lucide-react';
+import { useState, useEffect } from 'react';
 import { authStorage } from '../../../utils/auth';
-import { userApi } from '../../../api/api';
+import { userApi, chatApi } from '../../../api/api';
 
 const ManagerLayout = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [chatUnread, setChatUnread] = useState(0);
+
+  useEffect(() => {
+    const fetchUnread = () => {
+      chatApi.getUnreadCount()
+        .then(res => {
+          const data = res.data as any;
+          setChatUnread(typeof data === 'number' ? data : (data?.count || data?.unreadCount || 0));
+        })
+        .catch(() => {});
+    };
+    fetchUnread();
+    const interval = setInterval(fetchUnread, 30_000);
+    return () => clearInterval(interval);
+  }, []);
 
   const isActive = (path: string) => location.pathname.includes(path);
 
@@ -18,8 +33,10 @@ const ManagerLayout = () => {
     { label: 'Revenue', icon: TrendingUp, path: '/manager/analytics' },
     { label: 'Vouchers', icon: Ticket, path: '/manager/vouchers' },
     { label: 'Reviews', icon: MessageSquare, path: '/manager/reviews' },
+    { label: 'Chat', icon: MessageCircle, path: '/manager/chat', badge: chatUnread },
     { label: 'Tenants', icon: Building2, path: '/manager/tenants' },
-    { label: 'Store Profile', icon: Store, path: '/manager/store' }
+    { label: 'Store Profile', icon: Store, path: '/manager/store' },
+    { label: 'Rút tiền', icon: Wallet, path: '/manager/withdrawal' },
   ];
 
   return (
@@ -92,13 +109,18 @@ const ManagerLayout = () => {
                 <Link
                   key={item.path}
                   to={item.path}
-                  className={`flex items-center gap-3 px-4 py-3 rounded-xl font-bold transition-all ${isActive(item.path)
+                  className={`flex items-center gap-3 px-4 py-3 rounded-xl font-bold transition-all relative ${isActive(item.path)
                     ? 'bg-orange-600 text-white shadow-lg'
                     : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
                     }`}
                 >
                   <Icon className="w-5 h-5" />
                   {item.label}
+                  {(item as any).badge > 0 && (
+                    <span className="ml-auto bg-red-500 text-white text-[10px] font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-0.5">
+                      {(item as any).badge > 99 ? '99+' : (item as any).badge}
+                    </span>
+                  )}
                 </Link>
               );
             })}
@@ -133,13 +155,18 @@ const ManagerLayout = () => {
                       key={item.path}
                       to={item.path}
                       onClick={() => setIsMobileMenuOpen(false)}
-                      className={`flex items-center gap-3 px-4 py-3 rounded-xl font-bold transition-all ${isActive(item.path)
+                      className={`flex items-center gap-3 px-4 py-3 rounded-xl font-bold transition-all relative ${isActive(item.path)
                         ? 'bg-orange-600 text-white shadow-lg'
                         : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
                         }`}
                     >
                       <Icon className="w-5 h-5" />
                       {item.label}
+                      {(item as any).badge > 0 && (
+                        <span className="ml-auto bg-red-500 text-white text-[10px] font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-0.5">
+                          {(item as any).badge > 99 ? '99+' : (item as any).badge}
+                        </span>
+                      )}
                     </Link>
                   );
                 })}

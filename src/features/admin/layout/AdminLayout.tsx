@@ -12,7 +12,8 @@ import {
   Bell,
   Settings2,
   Ticket,
-  LogOut
+  LogOut,
+  Banknote
 } from 'lucide-react';
 import { cn } from '../../../lib/utils';
 import { authStorage } from '../../../utils/auth';
@@ -21,6 +22,7 @@ import { userApi, adminApi } from '../../../api/api';
 export default function AdminLayout() {
   const [isSidebarOpen, setSidebarOpen] = useState(true);
   const [pendingStoreCount, setPendingStoreCount] = useState(0);
+  const [pendingWithdrawalCount, setPendingWithdrawalCount] = useState(0);
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -34,6 +36,11 @@ export default function AdminLayout() {
         setPendingStoreCount(data.length);
       })
       .catch(() => { });
+    // Load pending withdrawal count from localStorage
+    try {
+      const reqs = JSON.parse(localStorage.getItem('withdrawal_requests') || '[]');
+      setPendingWithdrawalCount(reqs.filter((r: any) => r.status === 'pending').length);
+    } catch { }
   }, [location.pathname]);
 
   const handleLogout = async () => {
@@ -50,6 +57,7 @@ export default function AdminLayout() {
     { name: 'Category Management', path: '/admin/categories', icon: Tag },
     { name: 'Voucher Management', path: '/admin/vouchers', icon: Ticket },
     { name: 'Transactions', path: '/admin/transactions', icon: Receipt },
+    { name: 'Rút tiền Manager', path: '/admin/withdrawals', icon: Banknote, badge: pendingWithdrawalCount },
   ];
 
   return (

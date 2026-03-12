@@ -4,7 +4,8 @@ import type {
     VoucherApplyRequest, DeliveryAddressDto, PaymentResponse,
     WalletResponse, OrderDto, EditProfileRequest, RegisterManagerRequest,
     FoodStoreCreateRequest, FoodStoreUpdateRequest, VoucherCreateRequest, VoucherUpdateRequest,
-    CancelOrderRequest, UpdateOrderStatusRequest, DepositRequest, AddressRequest
+    CancelOrderRequest, UpdateOrderStatusRequest, DepositRequest, AddressRequest,
+    SendMessageRequest
 } from '../types/swagger';
 
 // --- AXIOS INSTANCE ---
@@ -300,9 +301,34 @@ export const voucherApi = {
 };
 
 export const adminApi = {
+    // Stores Management
     getPendingStores: () => api.get<StoreDto[]>('/api/users/pending-stores'),
     approveStore: (storeId: number) => api.put(`/api/users/approve-store/${storeId}`),
-    lockUser: (userId: number) => api.put(`/api/users/lock/${userId}`),   // fixed missing /
     getStores: () => api.get<StoreDto[]>('/api/stores'),
     getFoodTypes: () => api.get('/api/food-types'),
+    // User Management
+    lockUser: (userId: number) => api.put(`/api/users/lock/${userId}`),
 };
+
+export const chatApi = {
+    send: (data: SendMessageRequest) => api.post('/api/chat/send', {
+        receiverId: parseInt(data.receiverId as any) || 0,
+        storeId: parseInt(data.storeId as any) || 0,
+        content: String(data.content || '')
+    }),
+    getMessages: (otherUserId: number, storeId: number) =>
+        api.get(`/api/chat/messages/${otherUserId}/${storeId}`),
+    getConversations: () => api.get('/api/chat/conversations'),
+    markRead: (otherUserId: number, storeId: number) =>
+        api.put(`/api/chat/read/${otherUserId}/${storeId}`),
+    getUnreadCount: () => api.get('/api/chat/unread-count'),
+    // Admin → Manager: storeId=0 marks an admin-context message
+    sendToManager: (managerId: number, content: string) =>
+        api.post('/api/chat/send', { 
+            receiverId: parseInt(managerId as any) || 0, 
+            storeId: 0, 
+            content: String(content || '') 
+        }),
+};
+
+
