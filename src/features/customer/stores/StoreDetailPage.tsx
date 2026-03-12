@@ -141,6 +141,8 @@ export default function StoreDetailPage() {
         setDifferentStoreItem(null);
     };
 
+    const isAdmin = localStorage.getItem('roleName') === 'Admin';
+
     if (isLoading) {
         return (
             <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -160,41 +162,62 @@ export default function StoreDetailPage() {
 
     return (
         <div className="pb-24 bg-[#FCF9F5] min-h-screen font-sans">
-            {/* STICKY HEADER */}
-            <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-[#C76E00]/10 shadow-sm transition-all duration-300">
-                <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                        <button 
-                            onClick={() => navigate(-1)}
-                            className="p-2 -ml-2 hover:bg-orange-50 rounded-full text-gray-900 transition-colors"
-                        >
-                            <ArrowLeft className="w-5 h-5" />
-                        </button>
-                        <h1 className="text-sm font-black text-gray-900 uppercase italic tracking-tighter truncate max-w-[200px] sm:max-w-md">
-                            {store.name}
-                        </h1>
-                    </div>
-                    
-                    <div className="flex items-center gap-2">
-                        <button
-                            onClick={toggleFav}
-                            className={cn(
-                                "p-2 rounded-full transition-all border",
-                                isFav 
-                                    ? "bg-red-50 text-red-500 border-red-100" 
-                                    : "hover:bg-gray-100 text-gray-600 border-transparent"
-                            )}
-                        >
-                            <Heart className={cn("w-5 h-5", isFav && "fill-current")} />
-                        </button>
-                        <Link to="/cart" className="p-2 hover:bg-gray-100 rounded-full text-gray-600 transition-colors border border-transparent">
-                            <ShoppingCart className="w-5 h-5" />
-                        </Link>
-                    </div>
+            {/* ADMIN PREVIEW BANNER */}
+            {isAdmin && (!store.isApproved || !store.isActive) && (
+                <div className="bg-amber-600 text-white px-4 py-2 text-center text-xs font-black uppercase tracking-widest sticky top-0 z-[60] shadow-lg">
+                    Chế độ xem trước (Admin): Quán này {!store.isApproved ? 'chưa được duyệt' : 'đang bị khóa'}
                 </div>
-            </header>
+            )}
+
+            {/* STICKY HEADER - Only for customers */}
+            {!isAdmin && (
+                <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-[#C76E00]/10 shadow-sm transition-all duration-300">
+                    <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
+                        <div className="flex items-center gap-4">
+                            <button
+                                onClick={() => navigate(-1)}
+                                className="p-2 -ml-2 hover:bg-orange-50 rounded-full text-gray-900 transition-colors"
+                            >
+                                <ArrowLeft className="w-5 h-5" />
+                            </button>
+                            <h1 className="text-sm font-black text-gray-900 uppercase italic tracking-tighter truncate max-w-[200px] sm:max-w-md">
+                                {store.name}
+                            </h1>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                            <button
+                                onClick={toggleFav}
+                                className={cn(
+                                    "p-2 rounded-full transition-all border",
+                                    isFav
+                                        ? "bg-red-50 text-red-500 border-red-100"
+                                        : "hover:bg-gray-100 text-gray-600 border-transparent"
+                                )}
+                            >
+                                <Heart className={cn("w-5 h-5", isFav && "fill-current")} />
+                            </button>
+                            <Link to="/cart" className="p-2 hover:bg-gray-100 rounded-full text-gray-600 transition-colors border border-transparent">
+                                <ShoppingCart className="w-5 h-5" />
+                            </Link>
+                        </div>
+                    </div>
+                </header>
+            )}
 
             <main className="max-w-6xl mx-auto px-4 pt-6">
+                {/* ADMIN BACK BUTTON */}
+                {isAdmin && (
+                    <button
+                        onClick={() => navigate(-1)}
+                        className="mb-6 flex items-center gap-2 text-gray-500 hover:text-[#C76E00] font-black uppercase text-[10px] tracking-widest transition-colors group"
+                    >
+                        <div className="w-8 h-8 rounded-full bg-white border border-gray-100 flex items-center justify-center shadow-sm group-hover:border-[#C76E00]/30 transition-all">
+                            <ArrowLeft className="w-4 h-4" />
+                        </div>
+                        Quay lại danh sách
+                    </button>
+                )}
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
                     {/* MAIN COLUMN */}
                     <div className="lg:col-span-8 space-y-8">
@@ -208,7 +231,14 @@ export default function StoreDetailPage() {
                             <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-60" />
                             <div className="absolute bottom-6 left-8 right-8">
                                 <div className="flex items-center gap-3 mb-2">
-                                    <Badge className="bg-green-500 text-white border-none px-3 py-1 text-[10px] font-black uppercase tracking-widest shadow-lg">Open Now</Badge>
+                                    {store.isApproved ? (
+                                        <Badge className="bg-green-500 text-white border-none px-3 py-1 text-[10px] font-black uppercase tracking-widest shadow-lg">Open Now</Badge>
+                                    ) : (
+                                        <Badge className="bg-orange-500 text-white border-none px-3 py-1 text-[10px] font-black uppercase tracking-widest shadow-lg">Pending Approval</Badge>
+                                    )}
+                                    {!store.isActive && (
+                                        <Badge className="bg-red-500 text-white border-none px-3 py-1 text-[10px] font-black uppercase tracking-widest shadow-lg">Hidden (Inactive)</Badge>
+                                    )}
                                     <div className="px-3 py-1 bg-white/20 backdrop-blur-md rounded-full text-white text-[10px] font-black uppercase tracking-widest border border-white/30">
                                         {(store as any).address?.split(',').pop()?.trim() || 'Food Store'}
                                     </div>
@@ -274,21 +304,23 @@ export default function StoreDetailPage() {
 
                                             {/* Info */}
                                             <div className="flex-1 min-w-0 flex flex-col pt-1 relative">
-                                                <button
-                                                    onClick={(e) => {
-                                                        e.preventDefault();
-                                                        e.stopPropagation();
-                                                        if (item.food?.id) toggleFoodFav(item.food.id, item.food.name || 'Món ăn');
-                                                    }}
-                                                    className={cn(
-                                                        "absolute top-0 right-0 p-1.5 rounded-full transition-all",
-                                                        item.food?.id && favFoodIds.has(item.food.id)
-                                                            ? "text-red-500 bg-red-50"
-                                                            : "text-gray-300 hover:text-gray-400 hover:bg-gray-100"
-                                                    )}
-                                                >
-                                                    <Heart className={cn("w-3.5 h-3.5", item.food?.id && favFoodIds.has(item.food.id) && "fill-current")} />
-                                                </button>
+                                                {!isAdmin && (
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.preventDefault();
+                                                            e.stopPropagation();
+                                                            if (item.food?.id) toggleFoodFav(item.food.id, item.food.name || 'Món ăn');
+                                                        }}
+                                                        className={cn(
+                                                            "absolute top-0 right-0 p-1.5 rounded-full transition-all",
+                                                            item.food?.id && favFoodIds.has(item.food.id)
+                                                                ? "text-red-500 bg-red-50"
+                                                                : "text-gray-300 hover:text-gray-400 hover:bg-gray-100"
+                                                        )}
+                                                    >
+                                                        <Heart className={cn("w-3.5 h-3.5", item.food?.id && favFoodIds.has(item.food.id) && "fill-current")} />
+                                                    </button>
+                                                )}
 
                                                 <div>
                                                     <Link to={`/product/${item.id}`} state={{ foodStore: item }}>
@@ -303,18 +335,27 @@ export default function StoreDetailPage() {
                                                     <span className="text-sm sm:text-base font-black text-gray-900 italic">
                                                         {item.price.toLocaleString()}đ
                                                     </span>
-                                                    <button
-                                                        onClick={() => addToCart(item)}
-                                                        disabled={isAddingToCart === item.id || item.isAvailable === false}
-                                                        className="flex items-center gap-2 bg-[#C76E00] hover:bg-[#A55B00] disabled:bg-gray-200 text-white text-[10px] font-black uppercase tracking-widest px-4 py-2 rounded-xl transition-all shadow-lg shadow-orange-900/10 active:scale-95"
-                                                    >
-                                                        {isAddingToCart === item.id ? (
-                                                            <span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                                                        ) : (
-                                                            <Plus className="w-3.5 h-3.5" />
-                                                        )}
-                                                        Thêm
-                                                    </button>
+                                                    {!isAdmin ? (
+                                                        <button
+                                                            onClick={() => addToCart(item)}
+                                                            disabled={isAddingToCart === item.id || item.isAvailable === false}
+                                                            className="flex items-center gap-2 bg-[#C76E00] hover:bg-[#A55B00] disabled:bg-gray-200 text-white text-[10px] font-black uppercase tracking-widest px-4 py-2 rounded-xl transition-all shadow-lg shadow-orange-900/10 active:scale-95"
+                                                        >
+                                                            {isAddingToCart === item.id ? (
+                                                                <span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                                            ) : (
+                                                                <Plus className="w-3.5 h-3.5" />
+                                                            )}
+                                                            Thêm
+                                                        </button>
+                                                    ) : (
+                                                        <span className={cn(
+                                                            "text-[9px] font-black uppercase tracking-widest px-3 py-1.5 rounded-lg",
+                                                            item.isAvailable ? "bg-emerald-50 text-emerald-600 border border-emerald-100" : "bg-rose-50 text-rose-500 border border-rose-100"
+                                                        )}>
+                                                            {item.isAvailable ? 'Sẵn sàng' : 'Hết hàng'}
+                                                        </span>
+                                                    )}
                                                 </div>
                                             </div>
                                         </div>

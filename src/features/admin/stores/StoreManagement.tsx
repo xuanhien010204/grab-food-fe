@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Store, MapPin, Search, CheckCircle, Clock, Loader2 } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Store, MapPin, Search, CheckCircle, Clock, Loader2, Eye } from 'lucide-react';
 import { storeApi, adminApi } from '../../../api/api';
 import type { StoreDto } from '../../../types/swagger';
 import { toast } from 'sonner';
@@ -54,27 +55,27 @@ const StoreManagement = () => {
     );
 
     return (
-        <div className="bg-[#FFF7ED] min-h-screen p-8 font-[Inter] space-y-6">
+        <div className="bg-cream min-h-screen p-8 font-sans space-y-8 animate-in fade-in duration-700">
 
             {/* Header */}
-            <div>
-                <h2 className="text-3xl font-bold text-[#1F2937]">
+            <div className="border-l-4 border-[#C76E00] pl-4">
+                <h2 className="text-3xl font-black text-charcoal tracking-tighter uppercase italic">
                     Quản lý cửa hàng
                 </h2>
-                <p className="text-[#4B5563]">
-                    Xem và quản lý tất cả cửa hàng
+                <p className="text-[10px] font-black text-charcoal/40 uppercase tracking-[0.2em] mt-1">
+                    Kiểm duyệt và giám sát hệ thống đối tác
                 </p>
             </div>
 
             {/* Tabs */}
-            <div className="flex gap-3">
+            <div className="flex gap-4">
 
                 <button
                     onClick={() => setTab('all')}
-                    className={`px-4 py-2 rounded-xl text-sm font-medium transition
+                    className={`px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all
                         ${tab === 'all'
-                            ? 'bg-[#F97316] text-white'
-                            : 'bg-white border border-[#FED7AA] text-[#374151] hover:bg-[#FFF7ED]'
+                            ? 'bg-[#C76E00] text-white shadow-lg shadow-[#C76E00]/20'
+                            : 'bg-white border border-[#C76E00]/20 text-charcoal/60 hover:bg-[#C76E00]/5'
                         }`}
                 >
                     Tất cả ({stores.length})
@@ -82,10 +83,10 @@ const StoreManagement = () => {
 
                 <button
                     onClick={() => setTab('pending')}
-                    className={`px-4 py-2 rounded-xl text-sm font-medium flex items-center gap-1 transition
+                    className={`px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest flex items-center gap-2 transition-all
                         ${tab === 'pending'
-                            ? 'bg-[#F97316] text-white'
-                            : 'bg-white border border-[#FED7AA] text-[#374151] hover:bg-[#FFF7ED]'
+                            ? 'bg-[#C76E00] text-white shadow-lg shadow-[#C76E00]/20'
+                            : 'bg-white border border-[#C76E00]/20 text-charcoal/60 hover:bg-[#C76E00]/5'
                         }`}
                 >
                     <Clock className="w-4 h-4" />
@@ -95,16 +96,16 @@ const StoreManagement = () => {
             </div>
 
             {/* Search */}
-            <div className="relative max-w-md">
+            <div className="relative max-w-md group">
 
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-charcoal/30 group-focus-within:text-[#C76E00] transition-colors" />
 
                 <input
                     type="text"
-                    placeholder="Search stores..."
+                    placeholder="Tìm tên cửa hàng, địa chỉ..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full pl-12 pr-4 py-3 bg-white border border-[#FED7AA] rounded-xl focus:ring-2 focus:ring-[#F97316] outline-none"
+                    className="w-full pl-12 pr-4 py-4 bg-white border-2 border-orange-100/50 rounded-2xl focus:border-[#C76E00] focus:ring-4 focus:ring-[#C76E00]/10 outline-none transition-all font-bold text-sm"
                 />
 
             </div>
@@ -126,29 +127,32 @@ const StoreManagement = () => {
                         >
 
                             {/* Image */}
-                            <div className="h-36 bg-[#FFEDD5] relative">
+                            <div className="h-44 bg-[#FFEDD5] relative group-hover:scale-105 transition-transform duration-700">
 
                                 {store.imageSrc ? (
-                                    <img
-                                        src={store.imageSrc}
-                                        alt={store.name}
-                                        className="w-full h-full object-cover"
-                                    />
+                                    <div className="w-full h-full relative">
+                                        <img
+                                            src={store.imageSrc}
+                                            alt={store.name}
+                                            className="w-full h-full object-cover"
+                                        />
+                                        <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
+                                    </div>
                                 ) : (
-                                    <div className="flex items-center justify-center h-full text-orange-400">
-                                        <Store className="w-12 h-12" />
+                                    <div className="flex items-center justify-center h-full text-[#C76E00]/20">
+                                        <Store className="w-16 h-16" />
                                     </div>
                                 )}
 
-                                <div className="absolute top-2 right-2">
+                                <div className="absolute top-4 right-4">
 
                                     {store.isApproved ? (
-                                        <span className="px-2 py-1 text-[10px] font-medium bg-green-100 text-green-700 rounded-lg flex items-center gap-1">
+                                        <span className="px-3 py-1.5 text-[10px] font-black uppercase tracking-widest bg-emerald-500 text-white rounded-xl flex items-center gap-1.5 shadow-lg shadow-emerald-500/20">
                                             <CheckCircle className="w-3 h-3" />
                                             Đã duyệt
                                         </span>
                                     ) : (
-                                        <span className="px-2 py-1 text-[10px] font-medium bg-yellow-100 text-yellow-700 rounded-lg">
+                                        <span className="px-3 py-1.5 text-[10px] font-black uppercase tracking-widest bg-amber-500 text-white rounded-xl shadow-lg shadow-amber-500/20">
                                             Chờ duyệt
                                         </span>
                                     )}
@@ -161,21 +165,21 @@ const StoreManagement = () => {
                             <div className="p-5 space-y-3">
 
                                 <h3
-                                    className="font-semibold text-lg text-[#1F2937] truncate"
+                                    className="font-black text-xl text-charcoal tracking-tighter italic truncate group-hover:text-[#C76E00] transition-colors"
                                     title={store.name}
                                 >
                                     {store.name}
                                 </h3>
 
                                 {store.description && (
-                                    <p className="text-xs text-gray-500 line-clamp-2">
+                                    <p className="text-[11px] font-bold text-charcoal/40 line-clamp-2 leading-relaxed h-8">
                                         {store.description}
                                     </p>
                                 )}
 
-                                <div className="flex items-start gap-2 text-sm text-[#4B5563]">
-                                    <MapPin className="w-4 h-4 mt-0.5 shrink-0" />
-                                    <span className="line-clamp-2">
+                                <div className="flex items-start gap-2 text-xs font-bold text-charcoal/60">
+                                    <MapPin className="w-4 h-4 mt-0.5 shrink-0 text-[#C76E00]" />
+                                    <span className="line-clamp-2 italic">
                                         {store.address || 'Chưa có địa chỉ'}
                                     </span>
                                 </div>
@@ -201,25 +205,36 @@ const StoreManagement = () => {
                                 </div>
 
                                 {/* Footer */}
-                                <div className="pt-3 border-t border-[#FED7AA] flex justify-between items-center">
+                                <div className="pt-4 border-t border-orange-100/50 flex justify-between items-center">
 
-                                    <span className="text-xs font-medium px-2 py-1 bg-[#FFEDD5] rounded-lg text-[#9A3412]">
+                                    <span className="text-[10px] font-black uppercase tracking-widest px-3 py-1.5 bg-cream border border-orange-100 rounded-xl text-charcoal/40">
                                         ID: {store.id}
                                     </span>
 
-                                    {!store.isApproved && (
-                                        <button
-                                            onClick={() => handleApprove(store.id)}
-                                            disabled={approvingId === store.id}
-                                            className="px-3 py-1.5 bg-[#F97316] text-white text-xs font-medium rounded-lg hover:bg-[#EA580C] disabled:opacity-50 flex items-center gap-1"
+                                    <div className="flex gap-2">
+                                        <Link
+                                            to={`/admin/stores/${store.id}`}
+                                            className="p-2 text-[#C76E00] hover:bg-[#C76E00]/10 rounded-xl transition-all active:scale-95"
+                                            title="Xem chi tiết"
                                         >
-                                            {approvingId === store.id &&
-                                                <Loader2 className="w-3 h-3 animate-spin" />
-                                            }
-                                            Duyệt
-                                        </button>
-                                    )}
+                                            <Eye className="w-5 h-5" />
+                                        </Link>
 
+                                        {!store.isApproved && (
+                                            <button
+                                                onClick={() => handleApprove(store.id)}
+                                                disabled={approvingId === store.id}
+                                                className="px-5 py-2.5 bg-[#C76E00] text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-[#A55B00] disabled:opacity-50 flex items-center gap-2 transition-all shadow-lg shadow-[#C76E00]/20 active:scale-95"
+                                            >
+                                                {approvingId === store.id ? (
+                                                    <Loader2 className="w-3 h-3 animate-spin" />
+                                                ) : (
+                                                    <CheckCircle className="w-3 h-3" />
+                                                )}
+                                                Duyệt ngay
+                                            </button>
+                                        )}
+                                    </div>
                                 </div>
 
                             </div>

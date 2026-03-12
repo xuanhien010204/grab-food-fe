@@ -1,8 +1,8 @@
 import { Outlet, Link, useLocation } from 'react-router-dom';
-import { Home, ShoppingCart, Wallet, Clock, UserCircle, Bell } from 'lucide-react';
+import { Home, ShoppingCart, Wallet, Clock, UserCircle } from 'lucide-react';
 import { cn } from '../../../lib/utils';
 import { useEffect, useState } from 'react';
-import { userApi, notificationApi } from '../../../api/api';
+import { userApi } from '../../../api/api';
 import { authStorage } from '../../../utils/auth';
 
 function countCartItems(orderList: Record<string, any>): number {
@@ -15,7 +15,6 @@ export default function CustomerLayout() {
         const cached = localStorage.getItem('cartCount');
         return cached ? parseInt(cached) : 0;
     });
-    const [notifCount, setNotifCount] = useState(0);
 
     useEffect(() => {
         const token = authStorage.getToken();
@@ -39,17 +38,6 @@ export default function CustomerLayout() {
         return () => window.removeEventListener('cartUpdate', handleCartUpdate);
     }, []);
 
-    useEffect(() => {
-        const token = authStorage.getToken();
-        if (!token) return;
-        notificationApi.getUnreadCount()
-            .then(res => {
-                const data = res.data as any;
-                setNotifCount(typeof data === 'number' ? data : (data?.count || data?.unreadCount || 0));
-            })
-            .catch(() => { });
-    }, []);
-
     const isActive = (path: string) => path === '/'
         ? location.pathname === '/'
         : location.pathname.startsWith(path);
@@ -58,7 +46,6 @@ export default function CustomerLayout() {
         { to: '/', icon: Home, label: 'Trang chủ' },
         { to: '/cart', icon: ShoppingCart, label: 'Giỏ hàng', badge: cartCount },
         { to: '/wallet', icon: Wallet, label: 'Ví' },
-        { to: '/notifications', icon: Bell, label: 'Thông báo', badge: notifCount },
         { to: '/orders', icon: Clock, label: 'Đơn hàng' },
         { to: '/profile', icon: UserCircle, label: 'Tài khoản' },
     ];

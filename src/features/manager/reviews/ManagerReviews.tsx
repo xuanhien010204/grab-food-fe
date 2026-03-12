@@ -26,7 +26,9 @@ export default function ManagerReviews() {
                 if (myStore) {
                     const storeId = (myStore as any).id;
                     const reviewsRes = await reviewApi.getByStore(storeId);
-                    setReviews(Array.isArray(reviewsRes.data) ? reviewsRes.data : []);
+                    const d = reviewsRes.data as any;
+                    const items = Array.isArray(d) ? d : (d?.reviews || d?.Reviews || d?.items || d?.Items || []);
+                    setReviews(items);
                 }
             } catch {
                 console.error('Failed to fetch reviews');

@@ -222,6 +222,16 @@ export default function OrderHistoryPage() {
                                             </p>
                                         </div>
                                         <div className="flex gap-2">
+                                            {order.status === 5 && (
+                                                <Link to={`/orders/${order.id}`} state={{ openReview: true }}>
+                                                    <Button
+                                                        variant="outline"
+                                                        className="h-10 px-5 rounded-xl text-[10px] font-black uppercase tracking-widest border-amber-100 text-amber-600 hover:bg-amber-50 active:scale-95 transition-all"
+                                                    >
+                                                        Đánh giá
+                                                    </Button>
+                                                </Link>
+                                            )}
                                             <Link to={`/orders/${order.id}`}>
                                                 <Button
                                                     variant="outline"

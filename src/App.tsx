@@ -18,14 +18,13 @@ import FoodDetailPage from './features/customer/foods/FoodDetailPage';
 import AddressPage from './features/customer/address/AddressPage';
 import FavoritesPage from './features/customer/favorites/FavoritesPage';
 import MyReviewsPage from './features/customer/reviews/MyReviewsPage';
-import NotificationsPage from './features/customer/notifications/NotificationsPage';
 import PaymentResultPage from './features/customer/wallet/PaymentResultPage';
 import ManagerRegistrationPage from './features/customer/pages/ManagerRegistrationPage';
+import NotFoundPage from './features/NotFoundPage';
 
 // Admin Imports
 import AdminLayout from './features/admin/layout/AdminLayout';
 import AdminDashboard from './features/admin/dashboard/Dashboard';
-import UserManagement from './features/admin/users/UserManagement';
 import StoreManagement from './features/admin/stores/StoreManagement';
 import CategoryManagement from './features/admin/categories/CategoryManagement';
 import Transactions from './features/admin/transactions/Transactions';
@@ -72,7 +71,6 @@ function App() {
           <Route path="addresses" element={<AddressPage />} />
           <Route path="favorites" element={<FavoritesPage />} />
           <Route path="reviews" element={<MyReviewsPage />} />
-          <Route path="notifications" element={<NotificationsPage />} />
           <Route path="register-store" element={<ManagerRegistrationPage />} />
         </Route>
 
@@ -81,8 +79,8 @@ function App() {
           <Route path="/admin" element={<AdminLayout />}>
             <Route index element={<Navigate to="dashboard" replace />} />
             <Route path="dashboard" element={<AdminDashboard />} />
-            <Route path="users" element={<UserManagement />} />
             <Route path="stores" element={<StoreManagement />} />
+            <Route path="stores/:id" element={<StoreDetailPage />} />
             <Route path="categories" element={<CategoryManagement />} />
             <Route path="vouchers" element={<VoucherManagement />} />
             <Route path="transactions" element={<Transactions />} />
@@ -92,7 +90,7 @@ function App() {
 
         {/* Manager Routes */}
         <Route element={<RequireRole roles={['Manager', 'Admin']} />}>
-          <Route path="/manager" element={<ManagerLayout />}>
+        <Route path="/manager" element={<ManagerLayout />}>
             <Route index element={<Navigate to="orders" replace />} />
             <Route path="orders" element={<OrderDashboard />} />
             <Route path="menu" element={<MenuManagement />} />
@@ -104,7 +102,7 @@ function App() {
           </Route>
         </Route>
 
-        <Route path="*" element={<Navigate to="/" replace />} />
+        <Route path="*" element={<NotFoundPage />} />
       </Routes>
     </Router>
   );

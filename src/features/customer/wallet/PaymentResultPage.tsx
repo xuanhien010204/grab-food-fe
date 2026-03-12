@@ -121,7 +121,12 @@ export default function PaymentResultPage() {
                     <Button
                         variant="outline"
                         className="w-full rounded-2xl py-4 font-bold border-gray-200"
-                        onClick={() => navigate('/')}
+                        onClick={() => {
+                            const role = localStorage.getItem('roleName');
+                            if (role === 'Admin') navigate('/admin');
+                            else if (role === 'Manager') navigate('/manager');
+                            else navigate('/');
+                        }}
                     >
                         <Home className="w-4 h-4 mr-2" />
                         Về trang chủ

@@ -2,7 +2,7 @@ import { ArrowLeft, MapPin, Phone, ReceiptText, Store, XCircle, Clock, CheckCirc
 import { Button } from '../../../components/ui/Button';
 import { Card } from '../../../components/ui/Card';
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { toast } from 'sonner';
 import { orderApi, reviewApi } from '../../../api/api';
 import { cn } from '../../../lib/utils';
@@ -18,6 +18,7 @@ const STATUS_STEPS = [
 
 export default function OrderDetailPage() {
     const navigate = useNavigate();
+    const location = useLocation();
     const { id } = useParams();
     const [order, setOrder] = useState<any>(null);
     const [isLoading, setIsLoading] = useState(true);
@@ -52,18 +53,26 @@ export default function OrderDetailPage() {
     useEffect(() => {
         if (!id) return;
         reviewApi.canReview(id).then(res => {
-            // API returns { canReview: bool }
             const d = res.data as any;
-            setCanReviewOrder(!!(d?.canReview ?? d?.CanReview ?? d));
+            const canReview = !!(d?.canReview ?? d?.CanReview ?? d);
+            setCanReviewOrder(canReview);
+            
+            // Auto-open if coming from history page with state
+            if (canReview && location.state?.openReview) {
+                setShowReviewModal(true);
+            }
         }).catch(() => setCanReviewOrder(false));
-    }, [id]);
+    }, [id, location.state]);
 
     const handleSubmitReview = async () => {
         if (!id) return;
         try {
             setIsSubmittingReview(true);
+            const firstFoodId = order?.items?.[0]?.foodId;
             await reviewApi.create({
                 orderId: id,
+                storeId: order?.storeId,
+                foodId: firstFoodId,
                 rating: reviewRating,
                 star: reviewRating,
                 comment: reviewComment,
@@ -114,6 +123,8 @@ export default function OrderDetailPage() {
             await orderApi.updateStatus(id, { status: 5 }); // 5 = Completed
             toast.success('Xác nhận đã nhận hàng thành công! 🎉');
             await fetchOrder();
+            // Automatically open review modal after confirming
+            setShowReviewModal(true);
         } catch (err: any) {
             toast.error(err.response?.data?.message || 'Không thể xác nhận nhận hàng');
         } finally {
@@ -331,7 +342,6 @@ export default function OrderDetailPage() {
                                 {reviewRating === 4 && 'Tốt 😊'}
                                 {reviewRating === 5 && 'Tuyệt vời! 🤩'}
                             </p>
-
                             {/* Comment */}
                             <textarea
                                 value={reviewComment}

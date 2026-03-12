@@ -1,38 +1,18 @@
-import { Search, Star, Clock, ShoppingCart, Utensils, Zap, Salad, Coffee, Pizza, Store, ChevronRight } from 'lucide-react';
+import { Search, Star, Clock, Store, ChevronRight } from 'lucide-react';
 import { Input } from '../../../components/ui/Input';
 import { Badge } from '../../../components/ui/Badge';
 import { motion } from 'framer-motion';
 import { useState, useEffect, useRef } from 'react';
 import { cn } from '../../../lib/utils';
 import { Link } from 'react-router-dom';
-import { foodStoreApi, storeApi, foodTypeApi, voucherApi } from '../../../api/api';
+import { foodStoreApi, storeApi, voucherApi } from '../../../api/api';
 import type { FoodStoreDto, StoreDto } from '../../../types/swagger';
 
-const CATEGORY_MAP: Record<string, string> = {
-    'Appetizer': 'APPETIZER',
-    'Main Course': 'MAIN COURSE',
-    'Dessert': 'DESSERT',
-    'Beverage': 'BEVERAGE',
-    'Fast Food': 'FAST FOOD',
-    'All': 'Tất cả'
-};
-
-const CATEGORY_ICONS: Record<string, any> = {
-    'APPETIZER': Zap,
-    'MAIN COURSE': Utensils,
-    'DESSERT': Salad,
-    'BEVERAGE': Coffee,
-    'FAST FOOD': Pizza,
-    'Tất cả': ShoppingCart
-};
 
 export default function HomePage() {
-    const [activeCategory, setActiveCategory] = useState<number>(0);
     const [sortBy, setSortBy] = useState<'nearest' | 'rating' | 'fastest' | 'price'>('nearest');
     const userRole = localStorage.getItem('roleName') || '';
-    const [currentBanner, setCurrentBanner] = useState(0);
     const [isLoading, setIsLoading] = useState(true);
-    const [categories, setCategories] = useState<{ id: number, name: string }[]>([]);
     const [foodStores, setFoodStores] = useState<FoodStoreDto[]>([]);
     const [stores, setStores] = useState<StoreDto[]>([]);
     const [vouchers, setVouchers] = useState<any[]>([]);
@@ -63,24 +43,33 @@ export default function HomePage() {
         const fetchInitialData = async () => {
             setIsLoading(true);
             try {
-                const [catsRes, vouchersRes, storesRes] = await Promise.allSettled([
-                    foodTypeApi.getAll(),
+                const [vouchersRes, storesRes] = await Promise.allSettled([
                     voucherApi.getAll(),
                     storeApi.getAll()
                 ]);
 
-                if (catsRes.status === 'fulfilled') setCategories(catsRes.value.data || []);
-                if (storesRes.status === 'fulfilled') setStores(storesRes.value.data || []);
+                if (storesRes.status === 'fulfilled') {
+                    const allStores = storesRes.value.data || [];
+                    // Filter: Only show approved and active stores for customers
+                    setStores(allStores.filter(s => s.isApproved && s.isActive));
+                }
                 
-                let voucherData = vouchersRes.status === 'fulfilled' ? (vouchersRes.value.data || []) : [];
-                if (voucherData.length === 0) {
-                    voucherData = [
+                let rawVoucherData = vouchersRes.status === 'fulfilled' ? (vouchersRes.value.data as any) : [];
+                let voucherList = Array.isArray(rawVoucherData) ? rawVoucherData : (rawVoucherData?.result || rawVoucherData?.vouchers || []);
+
+                if (voucherList.length === 0) {
+                    setVouchers([
                         { id: 1, title: 'Giảm giá 30% cho đơn đầu', color: 'bg-orange-50', code: 'GRAB30' },
                         { id: 2, title: 'Freeship đơn từ 100k', color: 'bg-blue-50', code: 'FREESHIP' },
                         { id: 3, title: 'Mua 1 tặng 1 trà sữa', color: 'bg-pink-50', code: 'BOBOLIFE' },
-                    ];
+                    ]);
+                } else {
+                    setVouchers(voucherList.map((v: any) => ({
+                        ...v,
+                        title: v.name || v.title,
+                        color: v.color || (v.type === 1 ? 'bg-orange-50' : v.type === 2 ? 'bg-blue-50' : 'bg-pink-50')
+                    })));
                 }
-                setVouchers(voucherData);
                 setIsLoading(false);
             } catch (err) {
                 console.error("Failed to fetch initial data", err);
@@ -90,26 +79,20 @@ export default function HomePage() {
         fetchInitialData();
     }, []);
 
-    useEffect(() => {
-        const timer = setInterval(() => {
-            setCurrentBanner((prev) => (prev + 1) % (vouchers.length || 3));
-        }, 4000);
-        return () => clearInterval(timer);
-    }, [vouchers.length]);
 
     useEffect(() => {
         const fetchByFilter = async () => {
             try {
-                const foodsRes = await foodStoreApi.getAll({ 
-                    FoodTypeId: activeCategory === 0 ? undefined : activeCategory 
-                });
-                setFoodStores(foodsRes.data || []);
+                const foodsRes = await foodStoreApi.getAll();
+                const allFoodStores = foodsRes.data || [];
+                // Filter: Only show food from approved and active stores
+                setFoodStores(allFoodStores.filter(fs => fs.store?.isApproved && fs.store?.isActive));
             } catch (error) {
-                console.error("Failed to fetch filtered data", error);
+                console.error("Failed to fetch food stores", error);
             }
         };
         fetchByFilter();
-    }, [activeCategory]);
+    }, []);
 
     return (
         <div className="pb-12 bg-[#FCF9F5] min-h-screen">
@@ -145,70 +128,59 @@ export default function HomePage() {
             </div>
 
             <div ref={resultsRef} className="max-w-7xl mx-auto px-4 sm:px-6 mt-8 space-y-12 scroll-mt-6">
-                {/* COMPACT PROMOTION */}
-                <div className="relative overflow-hidden rounded-xl shadow-sm h-32 sm:h-40">
-                    <motion.div
-                        className="flex h-full"
-                        animate={{ x: `-${currentBanner * 100}%` }}
-                        transition={{ type: 'spring', stiffness: 200, damping: 25 }}
-                    >
-                        {vouchers.map((promo) => (
-                            <div key={promo.id} className={cn("w-full h-full min-w-full flex items-center justify-between px-8 sm:px-12 relative", promo.color || 'bg-white')}>
-                                <div className="relative z-10 space-y-1">
-                                    <Badge className="bg-[#C76E00] px-2 py-0.5 rounded uppercase text-[8px] font-bold tracking-wider text-white">Ưu đãi</Badge>
-                                    <h3 className="text-lg sm:text-xl font-black text-gray-900 leading-tight">
-                                        {promo.title}
-                                    </h3>
-                                    <div className="flex items-center gap-2">
-                                        <span className="text-[9px] font-bold text-gray-400 uppercase">Sử dụng:</span>
-                                        <code className="bg-[#C76E00]/10 px-2 py-0.5 rounded text-[#C76E00] font-bold border border-[#C76E00]/20 text-[10px]">
-                                            {promo.code || 'FOODDELIVERY'}
-                                        </code>
+                {/* PREMIUM VOUCHERS SECTION */}
+                <section className="space-y-4">
+                    <div className="flex items-center justify-between">
+                        <h2 className="text-xl font-black text-gray-900 uppercase tracking-tight italic">Ưu đãi độc quyền</h2>
+                        <span className="text-[10px] font-bold text-[#C76E00] uppercase tracking-widest bg-[#C76E00]/10 px-3 py-1 rounded-full">Hot Vouchers</span>
+                    </div>
+                    
+                    <div className="flex gap-4 overflow-x-auto pb-4 -mx-4 px-4 scrollbar-hide">
+                        {vouchers.map((promo, idx) => (
+                            <motion.div 
+                                key={promo.id || idx}
+                                whileHover={{ y: -5 }}
+                                className="min-w-[280px] sm:min-w-[320px] h-32 relative bg-white rounded-2xl border border-orange-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] overflow-hidden flex"
+                            >
+                                {/* Left Side: Discount Info */}
+                                <div className={cn("w-24 sm:w-28 flex flex-col items-center justify-center border-r-2 border-dashed border-orange-100 relative", promo.color || 'bg-orange-50')}>
+                                    <div className="absolute -top-3 -right-3 w-6 h-6 bg-[#FCF9F5] rounded-full border border-orange-50" />
+                                    <div className="absolute -bottom-3 -right-3 w-6 h-6 bg-[#FCF9F5] rounded-full border border-orange-50" />
+                                    
+                                    <span className="text-[10px] font-black text-[#C76E00]/60 uppercase tracking-tighter mb-1">Giảm</span>
+                                    <span className="text-2xl font-black text-[#C76E00]">
+                                        {promo.title?.match(/\d+%/)?.[0] || 'HOT'}
+                                    </span>
+                                </div>
+                                
+                                {/* Right Side: Content & Action */}
+                                <div className="flex-1 p-4 flex flex-col justify-between">
+                                    <div>
+                                        <h3 className="text-sm font-black text-gray-900 leading-tight line-clamp-2 uppercase italic">{promo.title}</h3>
+                                        <p className="text-[9px] text-gray-400 font-bold mt-1 uppercase tracking-widest">{promo.storeName || 'Toàn hệ thống'}</p>
+                                    </div>
+                                    
+                                    <div className="flex items-center justify-between mt-2">
+                                        <div className="bg-gray-50 border border-gray-100 rounded-lg px-3 py-1.5 flex items-center gap-2">
+                                            <span className="text-[10px] font-black text-gray-900 tracking-wider select-all">{promo.code || 'FOOD2026'}</span>
+                                        </div>
+                                        <button 
+                                            onClick={() => {
+                                                navigator.clipboard.writeText(promo.code || 'FOOD2026');
+                                                // Minimal feedback since we don't have a toast ref here
+                                            }}
+                                            className="text-[10px] font-black text-[#C76E00] hover:text-[#A55B00] uppercase tracking-widest"
+                                        >
+                                            Sao chép
+                                        </button>
                                     </div>
                                 </div>
-                                <div className="hidden sm:block opacity-10">
-                                    <ShoppingCart className="w-20 h-20 text-orange-600" />
-                                </div>
-                            </div>
+                            </motion.div>
                         ))}
-                    </motion.div>
-                </div>
-
-                {/* CATEGORIES */}
-                <section>
-                    <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide -mx-4 px-4 sm:mx-0 sm:px-0">
-                        {[{id: 0, name: 'Tất cả'}, ...categories].map((cat) => {
-                            const displayName = CATEGORY_MAP[cat.name] || cat.name;
-                            const Icon = CATEGORY_ICONS[displayName] || Utensils;
-                            const active = activeCategory === cat.id;
-                            return (
-                                <button
-                                    key={cat.id}
-                                    onClick={() => setActiveCategory(cat.id)}
-                                    className={cn(
-                                        "flex flex-col items-center gap-1.5 min-w-[70px] p-3 rounded-xl transition-all border group",
-                                        active 
-                                            ? "bg-[#C76E00] border-[#C76E00] text-white shadow-lg scale-105 shadow-[#C76E00]/20" 
-                                            : "bg-white border-gray-100 text-gray-500 hover:border-[#C76E00]/20 hover:bg-[#C76E00]/5"
-                                    )}
-                                >
-                                    <Icon className={cn("w-4 h-4", active ? "text-white" : "text-gray-400 group-hover:text-[#C76E00]")} />
-                                    <span className="text-[9px] font-black uppercase tracking-tighter whitespace-nowrap">{displayName}</span>
-                                </button>
-                            );
-                        })}
                     </div>
                 </section>
-
                 {/* POPULAR ITEMS */}
                 <section>
-                    <div className="flex justify-between items-end mb-4 border-l-4 border-brand pl-3">
-                        <div>
-                            <h2 className="text-lg font-black text-gray-900 uppercase tracking-tight">Món ăn phổ biến</h2>
-                            <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Gợi ý riêng cho bạn</p>
-                        </div>
-                    </div>
-
                     <div className="flex space-x-4 overflow-x-auto pb-4 -mx-4 px-4 scrollbar-hide">
                         {isLoading ? (
                             [1, 2, 3, 4].map(i => <div key={i} className="min-w-[180px] h-48 bg-gray-50 rounded-xl animate-pulse" />)
@@ -293,11 +265,9 @@ export default function HomePage() {
                             [1, 2, 3, 4, 5, 6].map(i => <div key={i} className="h-48 bg-gray-50 rounded-xl animate-pulse" />)
                         ) : (
                             (() => {
-                                const filteredStoreIds = new Set(foodStores.map(f => f.storeId));
                                 const storesToShow = sortedStores.filter(s => {
                                     const matchesSearch = !searchQuery || s.name?.toLowerCase().includes(searchQuery.toLowerCase());
-                                    const matchesCategory = activeCategory === 0 || filteredStoreIds.has(s.id);
-                                    return matchesSearch && matchesCategory;
+                                    return matchesSearch;
                                 });
 
                                 if (storesToShow.length === 0) {

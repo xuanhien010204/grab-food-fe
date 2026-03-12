@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { toast } from 'sonner';
 import type {
     FoodDto, FoodStoreDto, StoreDto, LoginRequest, RegisterRequest, UserProfileDto,
     VoucherApplyRequest, DeliveryAddressDto, PaymentResponse,
@@ -44,26 +45,65 @@ api.interceptors.response.use((response) => {
     return response;
 }, (error) => {
     console.error(`[API Response Error] ${error.config?.url}:`, error.response?.status, error.response?.data);
-    if (error.response?.status === 401) {
-        console.warn("401 Unauthorized detected for URL:", error.config?.url);
-        console.warn("Current pathname:", window.location.pathname);
 
+    // Extract detailed error message
+    let errorMessage = "Đã có lỗi xảy ra. Vui lòng thử lại.";
+    const data = error.response?.data;
+    const status = error.response?.status;
+
+    if (data) {
+        // Backend often returns { message: "..." } or { error: "..." } or { errors: { field: ["msg"] } }
+        if (data.errors && typeof data.errors === 'object') {
+            errorMessage = Object.values(data.errors).flat().join('. ');
+        } else {
+            const rawMsg = data.message || data.error || data.Message || (typeof data === 'string' ? data : '');
+            
+            // Filter out technical .NET/Backend exception names
+            if (rawMsg.includes('Exception') || rawMsg.includes('BadRequestException') || rawMsg.includes('was thrown')) {
+                errorMessage = "Dữ liệu không hợp lệ hoặc không thể thực hiện hành động này.";
+            } else if (rawMsg) {
+                errorMessage = rawMsg;
+            }
+        }
+    } else if (status) {
+        // Fallback to status code mapping
+        const statusMessages: Record<number, string> = {
+            400: "Yêu cầu không hợp lệ. Vui lòng kiểm tra lại.",
+            401: "Phiên làm việc hết hạn. Vui lòng đăng nhập lại.",
+            403: "Bạn không có quyền thực hiện hành động này.",
+            404: "Nội dung yêu cầu không tồn tại.",
+            500: "Lỗi hệ thống từ phía máy chủ.",
+            502: "Máy chủ đang bảo trì hoặc gặp sự cố.",
+            503: "Dịch vụ hiện không khả dụng."
+        };
+        errorMessage = statusMessages[status] || errorMessage;
+    } else if (error.message === "Network Error") {
+        errorMessage = "Không thể kết nối tới máy chủ. Vui lòng kiểm tra internet.";
+    }
+
+    // Show toast for non-silent requests
+    // We can add a custom flag in config to silence specific toasts if needed
+    if (!(error.config as any)?.silent) {
+        toast.error(errorMessage, {
+            id: `api-error-${error.config?.url}-${status}`, // Prevent duplicate toasts for same request
+        });
+    }
+
+    if (status === 401) {
+        console.warn("401 Unauthorized detected for URL:", error.config?.url);
+        
         // Only auto-logout for protected routes, not public pages
         const isProtectedRoute = ['/profile', '/orders', '/wallet', '/admin', '/manager'].some(route =>
             window.location.pathname.startsWith(route)
         );
 
         if (isProtectedRoute) {
-            console.warn("401 on protected route - Clearing auth and redirecting.");
             localStorage.removeItem('token');
             localStorage.removeItem('roleName');
             localStorage.removeItem('bypass_user');
-            // Redirect to login if not already there
             if (window.location.pathname !== '/login') {
                 window.location.href = '/login';
             }
-        } else {
-            console.warn("401 on public route - Not auto-logging out.");
         }
     }
     return Promise.reject(error);
@@ -267,15 +307,6 @@ export const walletApi = {
     checkBalance: (amount: number) => api.get(`/api/wallet/check-balance/${amount}`),
     momoReturn: (params: { orderId: string; resultCode: number; message: string; amount?: number }) =>
         api.get('/api/wallet/momo/return', { params }),
-};
-
-export const notificationApi = {
-    getAll: (params?: { pageNumber?: number; pageSize?: number; isRead?: boolean }) =>
-        api.get('/api/notifications', { params }),
-    getUnreadCount: () => api.get('/api/notifications/unread-count'),
-    markRead: (id: string | number) => api.put(`/api/notifications/${id}/read`),
-    markAllRead: () => api.put('/api/notifications/read-all'),
-    delete: (id: string | number) => api.delete(`/api/notifications/${id}`),
 };
 
 export const tenantApi = {

@@ -1,5 +1,5 @@
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
-import { BarChart3, ClipboardList, Store, LogOut, Bell, User, Menu, MessageSquare, Building2, TrendingUp, Ticket } from 'lucide-react';
+import { BarChart3, ClipboardList, Store, LogOut, Menu, MessageSquare, Building2, TrendingUp, Ticket } from 'lucide-react';
 import { useState } from 'react';
 import { authStorage } from '../../../utils/auth';
 import { userApi } from '../../../api/api';
@@ -46,16 +46,6 @@ const ManagerLayout = () => {
 
           {/* Right: Actions */}
           <div className="flex items-center gap-4">
-            <button className="relative p-2 hover:bg-white/10 rounded-lg">
-              <Bell className="w-5 h-5 text-white" />
-              <span className="absolute top-1 right-1 w-2 h-2 bg-yellow-400 rounded-full border border-dark-orange"></span>
-            </button>
-            <button
-              onClick={() => navigate('/profile')}
-              className="p-2 hover:bg-white/10 rounded-lg"
-            >
-              <User className="w-5 h-5 text-white" />
-            </button>
             <button
               onClick={async () => {
                 try { await userApi.signOut(); } catch { }
