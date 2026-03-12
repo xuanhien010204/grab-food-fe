@@ -1,9 +1,9 @@
-import { ArrowLeft, Heart, Minus, Plus, Star, MapPin, Clock, ShoppingCart } from 'lucide-react';
+import { ArrowLeft, Heart, Minus, Plus, Star, MapPin, Clock, ShoppingCart, MessageSquare } from 'lucide-react';
 import { Button } from '../../../components/ui/Button';
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams, useLocation, Link } from 'react-router-dom';
 import { toast } from 'sonner';
-import { foodStoreApi, favoriteApi } from '../../../api/api';
+import { foodStoreApi, favoriteApi, reviewApi } from '../../../api/api';
 import type { FoodStoreDto } from '../../../types/swagger';
 import { authStorage } from '../../../utils/auth';
 import { cartStore } from '../../../utils/cartStore';
@@ -23,6 +23,8 @@ export default function ProductDetail() {
     const [isLoading, setIsLoading] = useState(!(location.state as any)?.foodStore);
     const [isAdding, setIsAdding] = useState(false);
     const [isFav, setIsFav] = useState(false);
+    const [reviews, setReviews] = useState<any[]>([]);
+    const [avgRating, setAvgRating] = useState(0);
 
     useEffect(() => {
         // Only fetch if we don't have data from navigation state
@@ -37,13 +39,28 @@ export default function ProductDetail() {
                 .catch(() => toast.error('Không thể tải thông tin món ăn'))
                 .finally(() => setIsLoading(false));
         }
-    }, [id]);
+
+        // Fetch reviews
+        if (product?.food?.id) {
+            reviewApi.getByFood(product.food.id).then(res => {
+                const d = res.data as any;
+                const items = Array.isArray(d) ? d : (d?.reviews || d?.Reviews || []);
+                setReviews(items);
+                if (items.length > 0) {
+                    const sum = items.reduce((acc: number, r: any) => acc + (r.rating || r.star || 0), 0);
+                    setAvgRating(sum / items.length);
+                } else if (product?.food?.averageRating) {
+                    setAvgRating(product.food.averageRating);
+                }
+            }).catch(() => { });
+        }
+    }, [id, product?.food?.id]);
 
     useEffect(() => {
-        if (product?.food?.id) {
-            favoriteApi.checkFood(product.food.id)
+        const foodId = product?.food?.id;
+        if (foodId) {
+            favoriteApi.checkFood(foodId)
                 .then(res => {
-                    // API returns { isFavorited: bool }
                     const d = res.data as any;
                     setIsFav(!!(d?.isFavorited ?? d?.IsFavorited));
                 })
@@ -177,7 +194,7 @@ export default function ProductDetail() {
                                     </Badge>
                                 )}
                                 <div className="flex items-center text-yellow-500 font-black text-xs">
-                                    <Star className="w-4 h-4 fill-yellow-500 mr-1" /> 4.8
+                                    <Star className="w-4 h-4 fill-yellow-500 mr-1" /> {avgRating > 0 ? avgRating.toFixed(1) : (product?.food?.averageRating || 5.0)}
                                 </div>
                             </div>
                             <h2 className="text-3xl sm:text-4xl font-black text-gray-900 uppercase italic tracking-tight leading-tight">
@@ -186,6 +203,59 @@ export default function ProductDetail() {
                             <p className="text-gray-500 text-sm leading-relaxed max-w-2xl">
                                 Món ăn này được chế biến từ những nguyên liệu tươi ngon nhất, đảm bảo hương vị đậm đà và trải nghiệm ẩm thực tuyệt vời của bạn.
                             </p>
+                        </div>
+
+                        {/* REVIEWS SECTION */}
+                        <div className="space-y-6 pt-8 border-t border-orange-100/50">
+                            <div className="flex items-center justify-between">
+                                <h3 className="text-xl font-black text-gray-900 uppercase italic tracking-tight">Đánh giá từ khách hàng</h3>
+                                <div className="flex items-center gap-2">
+                                    <div className="px-3 py-1 bg-yellow-400/10 rounded-full flex items-center gap-1.5">
+                                        <Star className="w-3.5 h-3.5 text-yellow-600 fill-yellow-500" />
+                                        <span className="text-xs font-black text-yellow-700">{avgRating > 0 ? avgRating.toFixed(1) : (product.food?.averageRating || 5.0)}</span>
+                                    </div>
+                                    <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">{reviews.length} đánh giá</span>
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 gap-4">
+                                {reviews.length === 0 ? (
+                                    <div className="bg-white/50 rounded-[2rem] p-10 text-center border-2 border-dashed border-orange-100">
+                                        <MessageSquare className="w-10 h-10 text-orange-200 mx-auto mb-3" />
+                                        <p className="text-xs font-black text-gray-400 uppercase tracking-widest italic">Chưa có đánh giá nào cho món ăn này</p>
+                                    </div>
+                                ) : (
+                                    reviews.map((r, idx) => (
+                                        <div key={idx} className="bg-white/80 backdrop-blur-xl border border-orange-100/50 rounded-3xl p-5 shadow-sm space-y-3 transition-all hover:shadow-md border-l-4 border-l-[#C76E00]">
+                                            <div className="flex justify-between items-start">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="w-10 h-10 rounded-2xl bg-orange-50 flex items-center justify-center text-[#C76E00] font-black text-xs border border-orange-100">
+                                                        {(r.userName || 'U').charAt(0).toUpperCase()}
+                                                    </div>
+                                                    <div>
+                                                        <p className="font-black text-gray-900 text-xs uppercase tracking-tight">{r.userName || 'Khách hàng'}</p>
+                                                        <p className="text-[10px] text-gray-400 font-medium">{new Date(r.createdAt).toLocaleDateString('vi-VN')}</p>
+                                                    </div>
+                                                </div>
+                                                <div className="flex gap-0.5">
+                                                    {Array.from({ length: 5 }).map((_, i) => (
+                                                        <Star key={i} className={cn("w-3 h-3", i < (r.rating || r.star) ? "fill-yellow-400 text-yellow-400" : "text-gray-100")} />
+                                                    ))}
+                                                </div>
+                                            </div>
+                                            <p className="text-sm text-gray-600 font-medium italic pl-13">
+                                                "{r.comment || r.content}"
+                                            </p>
+                                            {r.storeReply && (
+                                                <div className="ml-13 p-4 bg-orange-50/50 rounded-2xl border border-orange-100/50 space-y-1">
+                                                    <p className="text-[10px] font-black text-[#C76E00] uppercase tracking-widest italic">Phản hồi từ quán:</p>
+                                                    <p className="text-xs text-gray-600 font-medium italic">{r.storeReply}</p>
+                                                </div>
+                                            )}
+                                        </div>
+                                    ))
+                                )}
+                            </div>
                         </div>
                     </div>
 

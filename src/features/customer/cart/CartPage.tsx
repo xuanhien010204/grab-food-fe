@@ -28,6 +28,8 @@ export default function CartPage() {
     const [walletBalance, setWalletBalance] = useState(0);
     const [orderNote, setOrderNote] = useState('');
     const [showConfirm, setShowConfirm] = useState(false);
+    const [showVoucherModal, setShowVoucherModal] = useState(false);
+    const [availableVouchers, setAvailableVouchers] = useState<any[]>([]);
 
     useEffect(() => {
         const token = localStorage.getItem('token');
@@ -46,10 +48,12 @@ export default function CartPage() {
             setCartItems(cartStore.getItemsArray());
         });
 
-        fetchVouchers();
+        if (cartItems.length > 0) {
+            fetchVouchers();
+        }
         fetchDefaultAddress();
         fetchWalletBalance();
-    }, [navigate]);
+    }, [navigate, cartItems.length]);
 
     const fetchWalletBalance = async () => {
         try {
@@ -69,7 +73,21 @@ export default function CartPage() {
     };
 
     const fetchVouchers = async () => {
-        // Vouchers fetched but not explicitly listed in this version to keep layout clean
+        try {
+            const firstItem = cartItems[0];
+            const storeId = firstItem?.foodStore?.storeId || firstItem?.foodStore?.StoreId;
+            if (!storeId) return;
+
+            const res = await voucherApi.getAvailable({ 
+                storeId: Number(storeId),
+                orderAmount: subtotal 
+            });
+            const d = res.data as any;
+            const vouchers = Array.isArray(d) ? d : (d?.vouchers || d?.Vouchers || []);
+            setAvailableVouchers(vouchers);
+        } catch (err) {
+            console.error('Failed to fetch vouchers:', err);
+        }
     };
 
     const refreshCart = () => {
@@ -414,7 +432,7 @@ export default function CartPage() {
 
                                 {/* Voucher Select Component integrated more beautifully */}
                                 <div className="pt-2">
-                                    <button onClick={() => setVoucherCode('')} className="w-full flex items-center justify-between p-3 rounded-2xl bg-orange-50/50 border border-orange-100/50 hover:bg-orange-100/50 transition-all group">
+                                    <button onClick={() => setShowVoucherModal(true)} className="w-full flex items-center justify-between p-3 rounded-2xl bg-orange-50/50 border border-orange-100/50 hover:bg-orange-100/50 transition-all group">
                                         <div className="flex items-center gap-2">
                                             <Ticket className="w-4 h-4 text-[#C76E00]" />
                                             <span className="text-[10px] font-black text-[#C76E00] uppercase tracking-widest">Ưu đãi giảm giá</span>
@@ -546,6 +564,77 @@ export default function CartPage() {
                             Xác nhận đặt hàng
                         </Button>
                     </div>
+                </div>
+            </Modal>
+
+            {/* Voucher Selection Modal */}
+            <Modal
+                isOpen={showVoucherModal}
+                onClose={() => setShowVoucherModal(false)}
+                title="Chọn mã giảm giá"
+            >
+                <div className="space-y-4">
+                    <div className="flex gap-2">
+                        <Input
+                            placeholder="Nhập mã ưu đãi..."
+                            value={voucherCode}
+                            onChange={(e) => { setVoucherCode(e.target.value); setVoucherError(''); }}
+                            className="h-11 rounded-xl"
+                        />
+                        <Button className="h-11 px-6 font-black uppercase tracking-widest text-[10px] bg-[#C76E00]" onClick={handleApplyVoucherCode}>
+                            Áp dụng
+                        </Button>
+                    </div>
+                    {voucherError && <p className="text-[10px] text-red-500 font-bold px-1">{voucherError}</p>}
+
+                    <div className="pt-4 border-t border-gray-100">
+                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-4 italic">Mã giảm giá khả dụng</p>
+                        
+                        <div className="space-y-3 max-h-[350px] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-orange-100">
+                            {availableVouchers.length === 0 ? (
+                                <div className="bg-orange-50/50 rounded-2xl p-8 text-center border-2 border-dashed border-orange-100">
+                                    <Ticket className="w-8 h-8 text-orange-200 mx-auto mb-2" />
+                                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest italic">Hiện không có mã giảm giá nào</p>
+                                </div>
+                            ) : (
+                                availableVouchers.map((v) => (
+                                    <button
+                                        key={v.id}
+                                        onClick={() => {
+                                            setSelectedVoucher(v);
+                                            setShowVoucherModal(false);
+                                            toast.success('Đã áp dụng mã giảm giá!');
+                                        }}
+                                        className={cn(
+                                            "w-full flex gap-4 p-4 rounded-2xl border-2 transition-all group text-left",
+                                            selectedVoucher?.id === v.id
+                                                ? "border-[#C76E00] bg-orange-50/30"
+                                                : "border-gray-50 bg-gray-50/30 hover:border-orange-100 hover:bg-orange-50/20"
+                                        )}
+                                    >
+                                        <div className="w-12 h-12 bg-white rounded-xl shadow-sm border border-orange-100 flex items-center justify-center shrink-0">
+                                            <Ticket className="w-6 h-6 text-[#C76E00]" />
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <div className="flex justify-between items-start">
+                                                <p className="font-black text-xs uppercase tracking-tight text-gray-900">{v.code}</p>
+                                                <Badge className="bg-[#C76E00]/10 text-[#C76E00] border-none text-[8px] px-1.5">
+                                                    {(v.voucherType === 1 || v.discountType === 1) ? `-${v.discountValue}%` : `-${(v.discountValue || 0).toLocaleString()}đ`}
+                                                </Badge>
+                                            </div>
+                                            <p className="text-[10px] text-gray-500 font-medium mt-1 truncate">
+                                                {v.description || `Giảm giá cho đơn từ ${(v.minOrderAmount || 0).toLocaleString()}đ`}
+                                            </p>
+                                        </div>
+                                    </button>
+                                ))
+                            )}
+                        </div>
+                    </div>
+
+                    <Button variant="ghost" className="w-full mt-2 text-[10px] font-black uppercase tracking-widest text-gray-400" onClick={() => setShowVoucherModal(false)}>
+                        Đóng
+                    </Button>
                 </div>
             </Modal>
         </div>

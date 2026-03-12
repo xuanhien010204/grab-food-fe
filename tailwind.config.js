@@ -7,28 +7,32 @@ export default {
     theme: {
         extend: {
             colors: {
-                brand: '#C76E00',
+                brand: '#ff8000', // Original vibrant orange
+                'dark-orange': '#C76E00',
+                cream: '#FFFBF0',
+                charcoal: '#1B1C1E',
                 orange: {
                     50: '#fff7ed',
                     100: '#ffedd5',
                     200: '#fed7aa',
                     300: '#fdba74',
                     400: '#fb923c',
-                    500: '#C76E00', // Replacing old orange with brand color
-                    600: '#a55b00',
-                    700: '#844900',
-                    800: '#633700',
-                    900: '#422500',
-                    950: '#211200',
+                    500: '#FF7F00', // Restored original vibrant orange
+                    600: '#e06c00',
+                    700: '#c2410c',
+                    800: '#9a3412',
+                    900: '#7c2d12',
+                    950: '#431407',
                 },
-                primary: "#C76E00",
-                "background-light": "#f8f7f5",
-                "background-dark": "#23190f",
-                "admin-sidebar": "#1d140c",
+                primary: "#ff8000", // Restored original primary orange
+                "background-light": "#f8f7f5", // Restored original off-white
+                "background-dark": "#23190f", // Restored original dark theme
+                "admin-sidebar": "#1B1C1E",
                 "admin-border": "#eadbcd",
             },
             fontFamily: {
-                display: ["Be Vietnam Pro", "system-ui", "sans-serif"],
+                sans: ["Inter", "system-ui", "sans-serif"],
+                display: ["Inter", "system-ui", "sans-serif"],
             },
             borderRadius: {
                 xl: "1.5rem",

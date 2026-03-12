@@ -43,8 +43,10 @@ export default function StoresPage() {
                 setIsLoading(true);
                 const res = await storeApi.getAll();
                 const data = Array.isArray(res.data) ? res.data : [];
-                setStores(data);
-                setFilteredStores(data);
+                // Filter: Only show approved and active stores
+                const activeStores = data.filter(s => s.isApproved && s.isActive);
+                setStores(activeStores);
+                setFilteredStores(activeStores);
             } catch (err) {
                 console.error('Failed to fetch stores:', err);
                 setError('Không thể tải danh sách cửa hàng.');

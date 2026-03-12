@@ -1,8 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Store, Tag, Check, Loader2, RefreshCw } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '../../../components/ui/Card';
-import { Button } from '../../../components/ui/Button';
-import { Badge } from '../../../components/ui/Badge';
+import { cn } from '../../../lib/utils';
 import { PieChart, Pie, Cell, Legend, Tooltip, ResponsiveContainer } from 'recharts';
 import { adminApi, storeApi, foodTypeApi } from '../../../api/api';
 import type { StoreDto } from '../../../types/swagger';
@@ -67,242 +65,195 @@ export default function AdminDashboard() {
     ].filter(d => d.value > 0);
 
     return (
-        <div className="space-y-8 bg-[#F5E6D3] min-h-screen p-6">
-
+        <div className="space-y-8 animate-in fade-in duration-700">
             {/* Header */}
-            <div className="flex items-center justify-between">
-                <div>
-                    <h2 className="text-3xl font-semibold text-[#2E2E2E]">
-                        Dashboard 
-                    </h2>
-                    <p className="text-sm text-gray-500 mt-1">
-                        Tổng quan hệ thống
+            <div className="flex items-center justify-between bg-white/50 backdrop-blur-md p-6 rounded-2xl border border-orange-100/50 shadow-sm">
+                <div className="border-l-4 border-[#C76E00] pl-4">
+                    <h1 className="text-3xl font-black text-charcoal tracking-tighter uppercase italic">Tổng quan hệ thống</h1>
+                    <p className="text-[10px] font-black text-charcoal/40 uppercase tracking-[0.2em] mt-1">
+                        Dữ liệu thời gian thực và quản lý phê duyệt
                     </p>
                 </div>
 
-                <Button
-                    variant="outline"
-                    size="sm"
+                <button
                     onClick={fetchData}
                     disabled={loading}
-                    className="rounded-full border-orange-200 hover:bg-orange-50"
+                    className="flex items-center gap-2 px-5 py-2.5 bg-white border border-orange-100 text-[#C76E00] text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-orange-50 transition-all active:scale-95 disabled:opacity-50"
                 >
-                    <RefreshCw className={`w-4 h-4 mr-1 ${loading ? 'animate-spin' : ''}`} />
-                    Làm mới
-                </Button>
+                    <RefreshCw className={cn("w-4 h-4", loading && "animate-spin")} />
+                    Làm mới dữ liệu
+                </button>
             </div>
 
             {/* SUMMARY CARDS */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-
-                {loading ? (
-                    Array.from({ length: 3 }).map((_, i) => (
-                        <Card key={i} className="border-none shadow animate-pulse rounded-2xl">
-                            <CardContent className="p-6 h-24" />
-                        </Card>
-                    ))
-                ) : (
-                    <>
-                        <Card className="border-none shadow-md rounded-2xl hover:shadow-lg transition">
-                            <CardContent className="p-6 flex items-center justify-between">
-                                <div>
-                                    <p className="text-sm text-gray-500">Tổng cửa hàng</p>
-                                    <h3 className="text-2xl font-bold text-[#2E2E2E] mt-1">
-                                        {allStores.length}
-                                    </h3>
-                                    <p className="text-xs text-gray-400 mt-1">
-                                        {activeStores.length} đang hoạt động
-                                    </p>
-                                </div>
-
-                                <div className="p-3 rounded-full bg-green-100 text-green-600">
-                                    <Store className="w-6 h-6" />
-                                </div>
-                            </CardContent>
-                        </Card>
-
-                        <Card className="border-none shadow-md rounded-2xl hover:shadow-lg transition">
-                            <CardContent className="p-6 flex items-center justify-between">
-                                <div>
-                                    <p className="text-sm text-gray-500">Chờ phê duyệt</p>
-                                    <h3 className="text-2xl font-bold text-[#C76E00] mt-1">
-                                        {pendingStores.length}
-                                    </h3>
-                                    <p className="text-xs text-gray-400 mt-1">
-                                        Cần xử lý
-                                    </p>
-                                </div>
-
-                                <div className="p-3 rounded-full bg-orange-100 text-orange-600">
-                                    <Store className="w-6 h-6" />
-                                </div>
-                            </CardContent>
-                        </Card>
-
-                        <Card className="border-none shadow-md rounded-2xl hover:shadow-lg transition">
-                            <CardContent className="p-6 flex items-center justify-between">
-                                <div>
-                                    <p className="text-sm text-gray-500">Danh mục món ăn</p>
-                                    <h3 className="text-2xl font-bold text-[#2E2E2E] mt-1">
-                                        {foodTypes.length}
-                                    </h3>
-                                    <p className="text-xs text-gray-400 mt-1">
-                                        Loại món trong hệ thống
-                                    </p>
-                                </div>
-
-                                <div className="p-3 rounded-full bg-orange-100 text-[#C76E00]">
-                                    <Tag className="w-6 h-6" />
-                                </div>
-                            </CardContent>
-                        </Card>
-                    </>
-                )}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {[
+                    { label: 'Tổng cửa hàng', value: allStores.length, sub: `${activeStores.length} hoạt động`, icon: Store, color: 'text-emerald-500', bg: 'bg-emerald-50' },
+                    { label: 'Chờ phê duyệt', value: pendingStores.length, sub: 'Cần xử lý ngay', icon: RefreshCw, color: 'text-[#C76E00]', bg: 'bg-orange-50' },
+                    { label: 'Danh mục món', value: foodTypes.length, sub: 'Phân loại món ăn', icon: Tag, color: 'text-[#C76E00]', bg: 'bg-orange-50' }
+                ].map((stat, i) => (
+                    <div key={i} className="bg-white rounded-[2rem] p-8 border border-orange-100/50 shadow-sm hover:shadow-xl hover:shadow-orange-500/5 transition-all group">
+                        <div className="flex items-start justify-between">
+                            <div>
+                                <p className="text-[10px] font-black text-charcoal/30 uppercase tracking-[0.2em] mb-1">{stat.label}</p>
+                                <h3 className="text-4xl font-black text-charcoal tracking-tighter italic group-hover:text-[#C76E00] transition-colors">
+                                    {loading ? '...' : stat.value}
+                                </h3>
+                                <p className="text-[10px] font-bold text-charcoal/40 uppercase mt-2 italic">{stat.sub}</p>
+                            </div>
+                            <div className={cn("p-4 rounded-2xl transition-transform group-hover:scale-110", stat.bg, stat.color)}>
+                                <stat.icon className="w-8 h-8" />
+                            </div>
+                        </div>
+                    </div>
+                ))}
             </div>
 
             {/* CHARTS */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-
-                <div className="lg:col-span-2">
-                    <Card className="shadow-md rounded-2xl border-none h-full">
-                        <CardHeader>
-                            <CardTitle>Trạng thái cửa hàng</CardTitle>
-                        </CardHeader>
-
-                        <CardContent className="h-[280px]">
-                            {loading ? (
-                                <div className="flex items-center justify-center h-full">
-                                    <Loader2 className="w-8 h-8 animate-spin text-[#C76E00]" />
-                                </div>
-                            ) : (
-                                <ResponsiveContainer width="100%" height="100%">
-                                    <PieChart>
-                                        <Pie
-                                            data={storeStatusData}
-                                            cx="50%"
-                                            cy="50%"
-                                            innerRadius={60}
-                                            outerRadius={100}
-                                            paddingAngle={4}
-                                            dataKey="value"
-                                        >
-                                            {storeStatusData.map((entry, index) => (
-                                                <Cell key={`cell-${index}`} fill={entry.color} />
-                                            ))}
-                                        </Pie>
-                                        <Legend verticalAlign="bottom" height={36} />
-                                        <Tooltip formatter={(value, name) => [`${value} cửa hàng`, name]} />
-                                    </PieChart>
-                                </ResponsiveContainer>
-                            )}
-                        </CardContent>
-                    </Card>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div className="bg-white rounded-[2.5rem] p-8 border border-orange-100/50 shadow-sm">
+                    <div className="flex items-center gap-3 mb-8">
+                        <div className="w-2 h-8 bg-[#C76E00] rounded-full" />
+                        <h2 className="text-xl font-black text-charcoal tracking-tighter uppercase italic">Trạng thái cửa hàng</h2>
+                    </div>
+                    <div className="h-[300px]">
+                        {loading ? (
+                            <div className="flex items-center justify-center h-full">
+                                <Loader2 className="w-10 h-10 animate-spin text-[#C76E00]" />
+                            </div>
+                        ) : (
+                            <ResponsiveContainer width="100%" height="100%">
+                                <PieChart>
+                                    <Pie
+                                        data={storeStatusData}
+                                        cx="50%"
+                                        cy="50%"
+                                        innerRadius={60}
+                                        outerRadius={100}
+                                        paddingAngle={8}
+                                        dataKey="value"
+                                        stroke="none"
+                                    >
+                                        {storeStatusData.map((entry, index) => (
+                                            <Cell key={`cell-${index}`} fill={entry.color} />
+                                        ))}
+                                    </Pie>
+                                    <Tooltip 
+                                        contentStyle={{ borderRadius: '1rem', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
+                                        itemStyle={{ fontWeight: 900, fontSize: '12px', textTransform: 'uppercase' }}
+                                    />
+                                    <Legend 
+                                        verticalAlign="bottom" 
+                                        height={36}
+                                        formatter={(val) => <span className="text-[10px] font-black uppercase text-charcoal/60 tracking-widest">{val}</span>}
+                                    />
+                                </PieChart>
+                            </ResponsiveContainer>
+                        )}
+                    </div>
                 </div>
 
-                <div>
-                    <Card className="shadow-md rounded-2xl border-none h-full">
-                        <CardHeader>
-                            <CardTitle>Danh mục món ăn</CardTitle>
-                        </CardHeader>
-
-                        <CardContent className="h-[280px]">
-                            {loading ? (
-                                <div className="flex items-center justify-center h-full">
-                                    <Loader2 className="w-8 h-8 animate-spin text-[#C76E00]" />
-                                </div>
-                            ) : (
-                                <ResponsiveContainer width="100%" height="100%">
-                                    <PieChart>
-                                        <Pie
-                                            data={categoryChartData}
-                                            cx="50%"
-                                            cy="50%"
-                                            innerRadius={40}
-                                            outerRadius={70}
-                                            paddingAngle={3}
-                                            dataKey="value"
-                                        >
-                                            {categoryChartData.map((entry, index) => (
-                                                <Cell key={`cell-${index}`} fill={entry.color} />
-                                            ))}
-                                        </Pie>
-                                        <Legend verticalAlign="bottom" height={36} />
-                                        <Tooltip />
-                                    </PieChart>
-                                </ResponsiveContainer>
-                            )}
-                        </CardContent>
-                    </Card>
+                <div className="bg-white rounded-[2.5rem] p-8 border border-orange-100/50 shadow-sm">
+                    <div className="flex items-center gap-3 mb-8">
+                        <div className="w-2 h-8 bg-charcoal rounded-full" />
+                        <h2 className="text-xl font-black text-charcoal tracking-tighter uppercase italic">Phân loại món ăn</h2>
+                    </div>
+                    <div className="h-[300px]">
+                        {loading ? (
+                            <div className="flex items-center justify-center h-full">
+                                <Loader2 className="w-10 h-10 animate-spin text-charcoal" />
+                            </div>
+                        ) : (
+                            <ResponsiveContainer width="100%" height="100%">
+                                <PieChart>
+                                    <Pie
+                                        data={categoryChartData}
+                                        cx="50%"
+                                        cy="50%"
+                                        innerRadius={80}
+                                        outerRadius={110}
+                                        paddingAngle={5}
+                                        dataKey="value"
+                                        stroke="none"
+                                    >
+                                        {categoryChartData.map((entry, index) => (
+                                            <Cell key={`cell-${index}`} fill={entry.color} />
+                                        ))}
+                                    </Pie>
+                                    <Tooltip 
+                                        contentStyle={{ borderRadius: '1rem', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
+                                        itemStyle={{ fontWeight: 900, fontSize: '12px', textTransform: 'uppercase' }}
+                                    />
+                                    <Legend 
+                                        verticalAlign="bottom" 
+                                        height={36}
+                                        formatter={(val) => <span className="text-[10px] font-black uppercase text-charcoal/60 tracking-widest">{val}</span>}
+                                    />
+                                </PieChart>
+                            </ResponsiveContainer>
+                        )}
+                    </div>
                 </div>
             </div>
 
             {/* PENDING STORES */}
-            <Card className="border-none shadow-md rounded-2xl">
-                <CardHeader className="flex flex-row items-center justify-between">
-                    <CardTitle>⏳ Cửa hàng chờ phê duyệt</CardTitle>
-                    <Badge variant="warning">{pendingStores.length} chờ duyệt</Badge>
-                </CardHeader>
+            <div className="bg-white rounded-[2.5rem] p-8 border border-orange-100/50 shadow-sm">
+                <div className="flex items-center justify-between mb-8">
+                    <div className="flex items-center gap-3">
+                        <div className="w-2 h-8 bg-rose-500 rounded-full" />
+                        <h2 className="text-xl font-black text-charcoal tracking-tighter uppercase italic">Cửa hàng chờ phê duyệt</h2>
+                    </div>
+                    <span className="bg-rose-500 text-white text-[10px] font-black px-3 py-1.5 rounded-full uppercase tracking-widest">
+                        {pendingStores.length} Yêu cầu
+                    </span>
+                </div>
 
-                <CardContent>
-
-                    {loading ? (
-                        <div className="flex justify-center py-8">
-                            <Loader2 className="w-6 h-6 animate-spin text-[#C76E00]" />
-                        </div>
-                    ) : pendingStores.length === 0 ? (
-                        <div className="text-center py-8 text-gray-500">
-                            <Check className="w-12 h-12 mx-auto mb-2 text-green-400" />
-                            <p>Không có cửa hàng nào chờ duyệt</p>
-                        </div>
-                    ) : (
-                        <div className="space-y-4">
-
-                            {pendingStores.map((store) => (
-
-                                <div
-                                    key={store.id}
-                                    className="flex items-center justify-between p-4 bg-white rounded-xl border border-orange-100 shadow-sm"
-                                >
-
+                {loading ? (
+                    <div className="flex justify-center py-12">
+                        <Loader2 className="w-8 h-8 animate-spin text-[#C76E00]" />
+                    </div>
+                ) : pendingStores.length === 0 ? (
+                    <div className="text-center py-20 bg-orange-50/30 rounded-3xl border-2 border-dashed border-orange-100/50">
+                        <Check className="w-16 h-16 text-emerald-500/20 mx-auto mb-4" />
+                        <p className="text-xs font-black text-charcoal/30 uppercase tracking-widest">Tuyệt vời! Không có yêu cầu nào đang chờ</p>
+                    </div>
+                ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {pendingStores.map((store) => (
+                            <div
+                                key={store.id}
+                                className="group flex items-center justify-between p-6 bg-white rounded-[2rem] border border-orange-100/50 hover:shadow-xl hover:shadow-orange-500/5 transition-all"
+                            >
+                                <div className="flex items-center gap-4">
+                                    <div className="w-14 h-14 rounded-2xl bg-cream flex items-center justify-center text-[#C76E00] border border-orange-100 shrink-0 group-hover:scale-110 transition-transform">
+                                        <Store className="w-7 h-7" />
+                                    </div>
                                     <div>
-                                        <div className="flex items-center space-x-3">
-                                            <h4 className="font-semibold text-[#2E2E2E]">
-                                                {store.name || 'Không có tên'}
-                                            </h4>
-
-                                            <Badge variant="warning">
-                                                Pending
-                                            </Badge>
-                                        </div>
-
-                                        <p className="text-sm text-gray-500 mt-1">
-                                            {store.address || 'N/A'} • {store.phone || 'N/A'}
+                                        <h4 className="font-black text-lg text-charcoal tracking-tighter italic prose-h4:m-0">
+                                            {store.name || 'Cửa hàng không tên'}
+                                        </h4>
+                                        <p className="text-[10px] font-bold text-charcoal/40 uppercase tracking-widest mt-1">
+                                            {store.phone || 'Chưa cập nhật SĐT'}
                                         </p>
                                     </div>
-
-                                    <Button
-                                        size="sm"
-                                        className="bg-[#C76E00] hover:bg-[#b86400] text-white rounded-full"
-                                        onClick={() => handleApprove(store.id)}
-                                        disabled={approvingId === store.id}
-                                    >
-                                        {approvingId === store.id
-                                            ? <Loader2 className="w-4 h-4 mr-1 animate-spin" />
-                                            : <Check className="w-4 h-4 mr-1" />
-                                        }
-                                        Approve
-                                    </Button>
-
                                 </div>
 
-                            ))}
-
-                        </div>
-                    )}
-
-                </CardContent>
-            </Card>
-
+                                <button
+                                    onClick={() => handleApprove(store.id)}
+                                    disabled={approvingId === store.id}
+                                    className="px-6 py-3 bg-[#C76E00] text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-[#A55B00] transition-all shadow-lg shadow-[#C76E00]/20 active:scale-95 disabled:opacity-50"
+                                >
+                                    {approvingId === store.id ? (
+                                        <Loader2 className="w-4 h-4 animate-spin" />
+                                    ) : (
+                                        'Phê duyệt'
+                                    )}
+                                </button>
+                            </div>
+                        ))}
+                    </div>
+                )}
+            </div>
         </div>
     );
 }

@@ -26,7 +26,9 @@ export default function ManagerReviews() {
                 if (myStore) {
                     const storeId = (myStore as any).id;
                     const reviewsRes = await reviewApi.getByStore(storeId);
-                    setReviews(Array.isArray(reviewsRes.data) ? reviewsRes.data : []);
+                    const d = reviewsRes.data as any;
+                    const items = Array.isArray(d) ? d : (d?.reviews || d?.Reviews || d?.items || d?.Items || []);
+                    setReviews(items);
                 }
             } catch {
                 console.error('Failed to fetch reviews');
@@ -91,37 +93,40 @@ export default function ManagerReviews() {
         <div className="space-y-6">
             <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Quản lý đánh giá</h1>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">Phản hồi đánh giá từ khách hàng</p>
+                    <h1 className="text-3xl font-black tracking-tight text-charcoal dark:text-cream">Quản lý đánh giá</h1>
+                    <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mt-1">Phản hồi đánh giá từ khách hàng</p>
                 </div>
                 <div className="flex items-center gap-3">
-                    <span className="bg-yellow-100 text-yellow-700 px-3 py-1 rounded-full text-sm font-bold">⭐ {avgRating}</span>
-                    <span className="bg-orange-100 text-orange-700 px-3 py-1 rounded-full text-sm font-bold">{reviews.length} đánh giá</span>
+                    <span className="bg-amber-50 dark:bg-amber-500/10 text-amber-600 px-4 py-2 rounded-2xl text-sm font-black border border-amber-200/50">⭐ {avgRating} / 5.0</span>
+                    <span className="bg-dark-orange/10 text-dark-orange px-4 py-2 rounded-2xl text-sm font-black border border-dark-orange/20">{reviews.length} đánh giá</span>
                 </div>
             </div>
 
             {/* Filter & Sort Bar */}
-            <div className="flex flex-wrap gap-3 items-center bg-white dark:bg-[#2d1b15] rounded-xl p-4 shadow-sm border border-gray-200 dark:border-gray-800">
-                <Filter className="w-4 h-4 text-gray-400" />
+            <div className="flex flex-wrap gap-6 items-center bg-cream/40 dark:bg-charcoal rounded-[2rem] p-6 shadow-sm border border-dark-orange/10 dark:border-gray-800 backdrop-blur-sm">
+                <div className="flex items-center gap-3">
+                   <Filter className="w-5 h-5 text-dark-orange/40" />
+                   <span className="text-[10px] font-black text-charcoal/40 uppercase tracking-widest hidden sm:inline">Bộ lọc:</span>
+                </div>
                 <select
                     value={filterRating ?? ''}
                     onChange={e => setFilterRating(e.target.value ? Number(e.target.value) : null)}
-                    className="px-3 py-1.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 text-sm dark:text-white focus:ring-2 focus:ring-orange-500"
+                    className="px-5 py-3 rounded-2xl border border-dark-orange/10 bg-white/50 dark:bg-gray-900 text-sm font-bold text-charcoal dark:text-cream focus:ring-4 focus:ring-dark-orange/10 focus:border-dark-orange appearance-none cursor-pointer"
                 >
-                    <option value="">Tất cả sao</option>
+                    <option value="">Tất cả mức sao</option>
                     {[5, 4, 3, 2, 1].map(n => <option key={n} value={n}>{n} sao</option>)}
                 </select>
                 <select
                     value={sortOrder}
                     onChange={e => setSortOrder(e.target.value as any)}
-                    className="px-3 py-1.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 text-sm dark:text-white focus:ring-2 focus:ring-orange-500"
+                    className="px-5 py-3 rounded-2xl border border-dark-orange/10 bg-white/50 dark:bg-gray-900 text-sm font-bold text-charcoal dark:text-cream focus:ring-4 focus:ring-dark-orange/10 focus:border-dark-orange appearance-none cursor-pointer"
                 >
-                    <option value="newest">Mới nhất</option>
-                    <option value="oldest">Cũ nhất</option>
+                    <option value="newest">Mới nhất trước</option>
+                    <option value="oldest">Cũ nhất trước</option>
                     <option value="highest">Sao cao nhất</option>
                     <option value="lowest">Sao thấp nhất</option>
                 </select>
-                <span className="text-xs text-gray-400 ml-auto">{filteredReviews.length}/{reviews.length} hiển thị</span>
+                <span className="text-[10px] font-black text-charcoal/30 ml-auto uppercase tracking-tighter italic">{filteredReviews.length} trên tổng {reviews.length} đánh giá</span>
             </div>
 
             {isLoading ? (
@@ -131,21 +136,22 @@ export default function ManagerReviews() {
                     ))}
                 </div>
             ) : reviews.length === 0 ? (
-                <div className="text-center py-16 bg-white dark:bg-[#2d1b15] rounded-xl shadow-sm">
-                    <MessageCircle className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                    <p className="text-gray-500">Chưa có đánh giá nào.</p>
+                <div className="text-center py-24 bg-cream/40 dark:bg-charcoal rounded-[3rem] border border-dark-orange/10">
+                    <MessageCircle className="w-20 h-20 text-dark-orange/20 mx-auto mb-4 stroke-[1px]" />
+                    <p className="text-charcoal/40 dark:text-cream/40 font-black uppercase tracking-[0.2em] italic">Chưa có đánh giá nào từ khách hàng.</p>
                 </div>
             ) : (
-                <div className="space-y-4">
+                <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
                     {filteredReviews.map(r => (
-                        <div key={r.id} className="bg-white dark:bg-[#2d1b15] rounded-xl border border-gray-200 dark:border-gray-800 p-5 shadow-sm">
+                        <div key={r.id} className="bg-cream/40 dark:bg-charcoal rounded-[2.5rem] border border-dark-orange/10 dark:border-gray-800 p-8 shadow-sm hover:shadow-xl hover:shadow-dark-orange/5 transition-all duration-500 group relative overflow-hidden">
+                            <div className="absolute right-0 top-0 w-32 h-32 bg-dark-orange/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 group-hover:bg-dark-orange/10 transition-all"></div>
                             <div className="flex items-start gap-4">
-                                <div className="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center text-orange-600 font-bold shrink-0">
+                                <div className="w-12 h-12 rounded-2xl bg-dark-orange/10 flex items-center justify-center text-dark-orange font-black shrink-0 border border-dark-orange/20">
                                     {(r.userName || r.user?.name || 'U').charAt(0).toUpperCase()}
                                 </div>
                                 <div className="flex-1">
-                                    <div className="flex items-center justify-between mb-1">
-                                        <span className="font-bold text-gray-900 dark:text-white">{r.userName || r.user?.name || 'Khách hàng'}</span>
+                                    <div className="flex items-center justify-between mb-2">
+                                        <span className="font-black text-charcoal dark:text-cream leading-tight">{r.userName || r.user?.name || 'Khách hàng'}</span>
                                         <div className="flex items-center gap-2">
                                             {renderStars(r.rating || 0)}
                                             <button
@@ -170,9 +176,9 @@ export default function ManagerReviews() {
 
                                     {/* Existing reply */}
                                     {r.reply && (
-                                        <div className="mt-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-3">
-                                            <p className="text-xs font-bold text-green-700 dark:text-green-300 mb-1">💬 Phản hồi của bạn:</p>
-                                            <p className="text-sm text-green-800 dark:text-green-200">{r.reply}</p>
+                                        <div className="mt-4 bg-emerald-50 dark:bg-emerald-500/5 border border-emerald-100 dark:border-emerald-500/20 rounded-2xl p-4 relative">
+                                            <div className="absolute -top-3 left-4 bg-emerald-600 text-white text-[10px] font-black px-2 py-0.5 rounded-full uppercase tracking-tighter">Phản hồi của bạn</div>
+                                            <p className="text-sm text-emerald-800 dark:text-emerald-200 font-medium leading-relaxed">{r.reply}</p>
                                         </div>
                                     )}
 

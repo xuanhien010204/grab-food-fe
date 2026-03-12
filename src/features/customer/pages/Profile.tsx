@@ -4,9 +4,9 @@ import { userApi, walletApi } from '../../../api/api';
 import { authStorage } from '../../../utils/auth';
 import type { UserProfileDto } from '../../../types/swagger';
 import { 
-    User, Mail, Phone, MapPin, ChevronRight, 
+    User, Mail, Phone, ChevronRight, 
     ArrowLeft, LogOut, Loader2, X, Edit2, Lock, 
-    Bell, Heart, Shield, Wallet, ClipboardList, Store
+    Shield, Wallet, ClipboardList, Store
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { cartStore } from '../../../utils/cartStore';
@@ -266,9 +266,6 @@ export function CustomerProfile() {
                             {[
                                 { icon: Wallet, label: 'Ví FoodDelivery', sub: balance != null ? balance.toLocaleString('vi-VN') + ' ₫' : '0 ₫', to: '/wallet', color: 'text-emerald-500', bg: 'bg-emerald-50' },
                                 { icon: ClipboardList, label: 'Lịch sử đơn hàng', sub: 'Hành trình ngon miệng', to: '/orders', color: 'text-blue-500', bg: 'bg-blue-50' },
-                                { icon: MapPin, label: 'Địa chỉ giao hàng', sub: 'Địa điểm nhận món', to: '/addresses', color: 'text-[#C76E00]', bg: 'bg-[#C76E00]/5' },
-                                { icon: Heart, label: 'Món ăn yêu thích', sub: 'Ghi nhớ hương vị', to: '/favorites', color: 'text-rose-500', bg: 'bg-rose-50' },
-                                { icon: Bell, label: 'Thông báo mới', sub: 'Đừng bỏ lỡ tin vui', to: '/notifications', color: 'text-indigo-500', bg: 'bg-indigo-50' },
                                 ...((!profile?.roleName || profile?.roleName === 'User') ? [
                                     { icon: Store, label: 'Đăng ký bán hàng', sub: 'Bắt đầu kinh doanh ngay', to: '/register-store', color: 'text-amber-500', bg: 'bg-amber-50' },
                                 ] : []),

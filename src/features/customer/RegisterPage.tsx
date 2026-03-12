@@ -50,8 +50,7 @@ export default function RegisterPage() {
             navigate('/login');
         } catch (error: any) {
             console.error(error);
-            const msg = error.response?.data?.message || error.message || 'Đăng ký thất bại';
-            toast.error(msg);
+            // Global API interceptor handles the error toast
         } finally {
             setIsLoading(false);
         }

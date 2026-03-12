@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Search, Lock, Loader2 } from 'lucide-react';
 import { adminApi } from '../../../api/api';
 import { toast } from 'sonner';
+import { cn } from '../../../lib/utils';
 
 const UserManagement = () => {
   const [users, setUsers] = useState<any[]>([]);
@@ -13,19 +14,13 @@ const UserManagement = () => {
   useEffect(() => {
     const fetchUsers = async () => {
       try {
-        const res = await fetch('/api/users', {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem('token')}`,
-          },
-        });
-
-        if (res.ok) {
-          const data = await res.json();
-          const result = data?.result || data;
-          setUsers(Array.isArray(result) ? result : []);
-        }
-      } catch {
-        console.log('User list API not available');
+        setLoading(true);
+        const res = await adminApi.getAllUsers();
+        // Since api.ts auto-unwraps 'result', res.data should be the array
+        setUsers(Array.isArray(res.data) ? res.data : []);
+      } catch (error) {
+        console.error('Failed to fetch users:', error);
+        toast.error('Không thể tải danh sách người dùng');
       } finally {
         setLoading(false);
       }
@@ -56,17 +51,6 @@ const UserManagement = () => {
     }
   };
 
-  const getStatusBadge = (user: any) => {
-    const base =
-      'inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold';
-
-    const isLocked = user.isLocked || user.lockoutEnabled;
-
-    if (isLocked)
-      return `${base} bg-red-50 text-red-600`;
-
-    return `${base} bg-green-50 text-green-700`;
-  };
 
   const getStatusText = (user: any) => {
     return user.isLocked || user.lockoutEnabled ? 'Bị khoá' : 'Hoạt động';
@@ -87,38 +71,38 @@ const UserManagement = () => {
   });
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8 animate-in fade-in duration-700">
 
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-[#1F2937]">
+      <div className="border-l-4 border-[#C76E00] pl-4">
+        <h1 className="text-3xl font-black text-charcoal tracking-tighter uppercase italic">
           Quản lý người dùng
         </h1>
-        <p className="text-sm text-[#6B7280]">
-          Quản lý toàn bộ tài khoản người dùng trong hệ thống.
+        <p className="text-[10px] font-black text-charcoal/40 uppercase tracking-[0.2em] mt-1">
+          Giám sát và bảo trợ cộng đồng người dùng
         </p>
       </div>
 
       {/* Search + Filter */}
-      <div className="bg-white border border-[#FED7AA] rounded-2xl p-5 shadow-sm flex flex-wrap items-center gap-4">
+      <div className="bg-white/50 backdrop-blur-md border border-orange-100/50 rounded-2xl p-6 shadow-sm flex flex-wrap items-center gap-6">
 
-        <div className="relative w-full md:w-80">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+        <div className="relative w-full md:w-96 group">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-charcoal/30 group-focus-within:text-[#C76E00] transition-colors" />
 
           <input
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             placeholder="Tìm tên, email hoặc ID..."
-            className="w-full pl-10 pr-4 py-2.5 text-sm rounded-xl border border-[#FED7AA] bg-[#FFF7ED] text-[#1F2937] placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#F97316]"
+            className="w-full pl-11 pr-4 py-3 text-sm font-bold rounded-xl border-2 border-orange-100/50 bg-white text-charcoal placeholder:text-charcoal/30 focus:outline-none focus:border-[#C76E00] focus:ring-4 focus:ring-[#C76E00]/10 transition-all"
           />
         </div>
 
         <select
-          className="h-10 px-3 rounded-xl border border-[#FED7AA] bg-[#FFF7ED] text-sm text-[#1F2937] focus:ring-2 focus:ring-[#F97316]"
+          className="h-12 px-6 rounded-xl border-2 border-orange-100/50 bg-white text-xs font-black uppercase tracking-widest text-charcoal/60 focus:border-[#C76E00] focus:ring-4 focus:ring-[#C76E00]/10 outline-none transition-all cursor-pointer"
           value={filterStatus}
           onChange={(e) => setFilterStatus(e.target.value)}
         >
-          <option value="">Tất cả</option>
+          <option value="">Tất cả trạng thái</option>
           <option value="Active">Hoạt động</option>
           <option value="Banned">Bị khoá</option>
         </select>
@@ -126,25 +110,25 @@ const UserManagement = () => {
       </div>
 
       {/* Table */}
-      <div className="bg-white border border-[#FED7AA] rounded-2xl shadow-sm overflow-hidden">
+      <div className="bg-white border border-orange-100/50 rounded-2xl shadow-xl shadow-charcoal/5 overflow-hidden">
 
         <div className="overflow-x-auto">
 
           <table className="w-full text-sm">
 
-            <thead className="bg-[#FFF7ED] border-b border-[#FED7AA]">
+            <thead className="bg-cream/50 border-b border-orange-100/50">
 
-              <tr className="text-xs uppercase text-[#6B7280] tracking-wider">
-                <th className="px-6 py-4 text-left">Avatar</th>
-                <th className="px-6 py-4 text-left">Người dùng</th>
-                <th className="px-6 py-4 text-left">Email</th>
-                <th className="px-6 py-4 text-center">Trạng thái</th>
-                <th className="px-6 py-4 text-right">Hành động</th>
+              <tr className="text-[10px] font-black uppercase text-charcoal/40 tracking-[0.2em]">
+                <th className="px-8 py-5 text-left">Hồ sơ</th>
+                <th className="px-8 py-5 text-left">Thông tin cơ bản</th>
+                <th className="px-8 py-5 text-left">Email hệ thống</th>
+                <th className="px-8 py-5 text-center">Trạng thái</th>
+                <th className="px-8 py-5 text-right">Quản trị</th>
               </tr>
 
             </thead>
 
-            <tbody className="divide-y divide-[#FED7AA]">
+            <tbody className="divide-y divide-orange-100/30">
 
               {loading ? (
                 <tr>
@@ -166,53 +150,59 @@ const UserManagement = () => {
                   >
 
                     {/* Avatar */}
-                    <td className="px-6 py-4">
+                    <td className="px-8 py-5">
 
-                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center text-white text-sm font-semibold">
+                      <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#C76E00] to-[#FF8000] flex items-center justify-center text-white text-lg font-black italic shadow-lg shadow-orange-500/20">
                         {(user.name || 'U').charAt(0).toUpperCase()}
                       </div>
 
                     </td>
 
                     {/* Name */}
-                    <td className="px-6 py-4">
+                    <td className="px-8 py-5">
 
-                      <p className="font-medium text-[#1F2937]">
+                      <p className="font-black text-charcoal tracking-tight italic">
                         {user.name || 'N/A'}
                       </p>
 
-                      <p className="text-xs text-gray-500">
+                      <p className="text-[10px] font-black text-charcoal/30 uppercase tracking-widest mt-0.5">
                         ID #{user.id}
                       </p>
 
                     </td>
 
                     {/* Email */}
-                    <td className="px-6 py-4 text-gray-500">
+                    <td className="px-8 py-5 text-xs font-bold text-charcoal/60">
                       {user.email || 'N/A'}
                     </td>
 
                     {/* Status */}
-                    <td className="px-6 py-4 text-center">
+                    <td className="px-8 py-5 text-center">
 
-                      <span className={getStatusBadge(user)}>
+                      <span className={cn(
+                        "px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest",
+                        (user.isLocked || user.lockoutEnabled)
+                          ? "bg-rose-500 text-white shadow-lg shadow-rose-500/20"
+                          : "bg-emerald-500 text-white shadow-lg shadow-emerald-500/20"
+                      )}>
                         {getStatusText(user)}
                       </span>
 
                     </td>
 
                     {/* Actions */}
-                    <td className="px-6 py-4 text-right">
+                    <td className="px-8 py-5 text-right">
 
                       <button
                         onClick={() => handleLockUser(user.id)}
                         disabled={lockingId === user.id}
-                        className="p-2 rounded-lg hover:bg-[#FFF7ED] transition"
+                        className="p-3 rounded-xl hover:bg-orange-50 text-charcoal/30 hover:text-[#C76E00] transition-all active:scale-90"
+                        title={user.isLocked ? "Mở khóa" : "Khóa tài khoản"}
                       >
                         {lockingId === user.id ? (
-                          <Loader2 className="w-4 h-4 animate-spin" />
+                          <Loader2 className="w-5 h-5 animate-spin" />
                         ) : (
-                          <Lock className="w-4 h-4 text-gray-600 hover:text-orange-600" />
+                          <Lock className="w-5 h-5" />
                         )}
                       </button>
 
@@ -229,10 +219,10 @@ const UserManagement = () => {
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between px-6 py-4 border-t border-[#FED7AA]">
+        <div className="flex items-center justify-between px-8 py-5 bg-cream/30 border-t border-orange-100/50">
 
-          <p className="text-sm text-gray-500">
-            Tổng người dùng: {filteredUsers.length}
+          <p className="text-[10px] font-black text-charcoal/30 uppercase tracking-[0.2em]">
+            Tổng số: {filteredUsers.length} tài khoản
           </p>
 
         </div>
