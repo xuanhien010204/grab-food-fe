@@ -31,7 +31,7 @@ export default function StoreDetailPage() {
             if (!id) return;
             const numericId = Number(id);
             const isNumeric = !isNaN(numericId);
-            
+
             if (!isNumeric && id.length < 5) {
                 console.warn("[StoreDetailPage] Invalid numeric ID format:", id);
                 setError("Mã cửa hàng không hợp lệ.");
@@ -43,14 +43,14 @@ export default function StoreDetailPage() {
                 setIsLoading(true);
                 // Use numeric ID if valid, otherwise use the string ID as is
                 const paramId = isNumeric ? numericId : id;
-                
+
                 const [storeRes, foodStoreRes] = await Promise.all([
                     storeApi.getById(paramId as any),
                     foodStoreApi.getByStore(paramId as any),
                 ]);
                 setStore(storeRes.data as any);
                 setFoods(Array.isArray(foodStoreRes.data) ? foodStoreRes.data : []);
-                
+
                 reviewApi.getByStore(paramId as any).then(r => {
                     const d = r.data as any;
                     setReviews(Array.isArray(d) ? d : (d?.reviews || d?.Reviews || []));
@@ -166,10 +166,10 @@ export default function StoreDetailPage() {
                     <div className="lg:col-span-8 space-y-8">
                         {/* HERO IMAGE */}
                         <div className="relative h-[280px] sm:h-[380px] rounded-[2.5rem] overflow-hidden shadow-2xl shadow-orange-900/10 border-4 border-white group">
-                            <img 
-                                src={(store as any).imageSrc || 'https://images.unsplash.com/photo-1552566626-52f8b828add9?w=1200'} 
-                                alt={(store as any).name} 
-                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-1000" 
+                            <img
+                                src={(store as any).imageSrc || 'https://images.unsplash.com/photo-1552566626-52f8b828add9?w=1200'}
+                                alt={(store as any).name}
+                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-1000"
                             />
                             <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-60" />
                             <div className="absolute bottom-6 left-8 right-8">
@@ -256,7 +256,7 @@ export default function StoreDetailPage() {
                                                     </Link>
                                                     <p className="text-[10px] text-gray-400 mt-0.5 line-clamp-1 font-bold uppercase tracking-wider">{item.food?.foodTypeName}</p>
                                                 </div>
-                                                
+
                                                 <div className="mt-auto flex items-center justify-between">
                                                     <span className="text-sm sm:text-base font-black text-gray-900 italic">
                                                         {item.price.toLocaleString()}đ
@@ -322,11 +322,11 @@ export default function StoreDetailPage() {
                                 <div className="text-right">
                                     <div className="text-2xl font-black text-[#C76E00] leading-none italic">4.5</div>
                                     <div className="flex mt-1">
-                                        {[1,2,3,4,5].map(i => <Star key={i} className="w-2.5 h-2.5 fill-yellow-500 text-yellow-500" />)}
+                                        {[1, 2, 3, 4, 5].map(i => <Star key={i} className="w-2.5 h-2.5 fill-yellow-500 text-yellow-500" />)}
                                     </div>
                                 </div>
                             </div>
-                            
+
                             <hr className="border-orange-50" />
 
                             <div className="space-y-6">
@@ -362,7 +362,7 @@ export default function StoreDetailPage() {
                                     ))
                                 )}
                             </div>
-                            
+
                             {reviews.length > 5 && (
                                 <button className="w-full text-[10px] font-black text-[#C76E00] uppercase tracking-widest hover:underline pt-2">
                                     Xem tất cả đánh giá

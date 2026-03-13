@@ -108,7 +108,7 @@ const ManagerLayout = () => {
                             )}>{item.label}</span>
                             
                             {item.badge !== undefined && item.badge > 0 && (
-                                <span className="absolute top-2 right-2 lg:right-4 w-5 h-5 bg-[#C76E00] text-white text-[10px] font-black rounded-full flex items-center justify-center border-2 border-white lg:static lg:ml-auto">
+                                <span className="absolute top-2 right-2 lg:right-4 w-5 h-5 bg-[#C76E00] text-white text-[10px] font-black rounded-full flex items-center justify-center border-2 border-white lg:static lg:ml-auto shadow-sm shadow-orange-500/20 ring-1 ring-orange-100/10">
                                     {item.badge}
                                 </span>
                             )}

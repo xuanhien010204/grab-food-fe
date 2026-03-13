@@ -42,15 +42,32 @@ const CustomerLayout = () => {
                 const [chatRes] = await Promise.all([
                     (chatApi as any).getUnreadCount({ silent: true })
                 ]);
-                setChatUnread(chatRes.data);
+                
+                let count = 0;
+                const data = chatRes.data;
+                if (typeof data === 'number') count = data;
+                else if (data && typeof data === 'object') {
+                    count = (data as any).count ?? (data as any).unreadCount ?? (data as any).result ?? 0;
+                }
+                
+                setChatUnread(count);
+                localStorage.setItem('customerUnreadChatCount', String(count));
             } catch (error) {
                 console.error('Failed to fetch counts', error);
             }
         };
 
+        const handleUnreadUpdate = () => {
+            fetchCounts();
+        };
+
         fetchCounts();
         const interval = setInterval(fetchCounts, 30000);
-        return () => clearInterval(interval);
+        window.addEventListener('chatUnreadUpdate', handleUnreadUpdate);
+        return () => {
+            clearInterval(interval);
+            window.removeEventListener('chatUnreadUpdate', handleUnreadUpdate);
+        };
     }, []);
 
     const isActive = (path: string) => path === '/'
@@ -60,7 +77,7 @@ const CustomerLayout = () => {
     const navItems = [
         { to: '/', label: 'Trang chủ' },
         { to: '/cart', label: 'Giỏ hàng', badge: cartCount },
-        { to: '/chat', label: 'Nhắn tin', badge: chatUnread },
+        { to: '/chat', label: 'Nhắn tin', badge: chatUnread || parseInt(localStorage.getItem('customerUnreadChatCount') || '0') },
         { to: '/wallet', label: 'Ví tiền' },
         { to: '/orders', label: 'Đơn hàng' },
         { to: '/profile', label: 'Tài khoản' },
@@ -186,7 +203,7 @@ const CustomerLayout = () => {
 
             {/* Mobile Bottom Nav */}
             <nav className="md:hidden fixed bottom-0 w-full bg-white/95 backdrop-blur-lg border-t border-orange-100/50 px-6 py-3 pb-6 flex justify-between items-center z-50">
-                {navItems.filter(item => ['/', '/cart', '/favorites', '/profile'].includes(item.to)).map((item) => (
+                {navItems.filter(item => ['/', '/cart', '/chat', '/profile'].includes(item.to)).map((item) => (
                     <Link
                         key={item.to}
                         to={item.to}

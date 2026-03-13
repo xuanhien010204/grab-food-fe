@@ -42,7 +42,14 @@ export default function CustomerChatPage() {
                 chatApi.getConversations(),
                 orderApi.getHistory(),
             ]);
-            setConversations(Array.isArray(convRes.data) ? convRes.data : []);
+            const convs = Array.isArray(convRes.data) ? convRes.data : [];
+            // Sắp xếp cuộc hội thoại theo thời gian tin nhắn mới nhất
+            convs.sort((a, b) => {
+                const da = a.lastMessageAt ? new Date(a.lastMessageAt).getTime() : 0;
+                const db = b.lastMessageAt ? new Date(b.lastMessageAt).getTime() : 0;
+                return db - da;
+            });
+            setConversations(convs);
 
             const orders: OrderDto[] = Array.isArray(ordersRes.data) ? ordersRes.data : [];
             const storeMap = new Map<number, OrderedStore>();
@@ -83,13 +90,37 @@ export default function CustomerChatPage() {
                 }
             }
             
-            // Đảm bảo tin nhắn được sắp xếp theo trình tự thời gian (cũ nhất -> mới nhất)
-            loadedMsgs.sort((a, b) => new Date(a.sentAt).getTime() - new Date(b.sentAt).getTime());
+            const parseDateValue = (d: any) => {
+                if (!d) return null;
+                const date = new Date(d);
+                return isNaN(date.getTime()) ? null : date.getTime();
+            };
+
+            // Detection: Check if the API returns messages in reverse order (newest first)
+            const firstDate = parseDateValue(loadedMsgs[0]?.sentAt);
+            const lastDate = parseDateValue(loadedMsgs[loadedMsgs.length - 1]?.sentAt);
             
-            console.log("Loaded messages for customer:", loadedMsgs);
-            setMessages(loadedMsgs);
+            let finalMsgs = [...loadedMsgs];
+            if (firstDate !== null && lastDate !== null && firstDate > lastDate) {
+                finalMsgs.reverse();
+            } else if (firstDate === null && lastDate === null && loadedMsgs.length > 1) {
+                finalMsgs.reverse();
+            }
+            
+            // Final safety sort: ensure ascending time if dates are available
+            finalMsgs.sort((a, b) => {
+                const ta = parseDateValue(a.sentAt);
+                const tb = parseDateValue(b.sentAt);
+                if (ta !== null && tb !== null) return ta - tb;
+                return 0; // Keep relative order otherwise
+            });
+
+            console.log("Loaded messages for customer (fixed order):", finalMsgs);
+            setMessages(finalMsgs);
             
             await chatApi.markRead(conv.otherUserId, conv.storeId).catch(() => {});
+            // Notify layout to update badge
+            window.dispatchEvent(new CustomEvent('chatUnreadUpdate'));
             loadConversations();
         } catch (err) {
             console.error("Failed to load generic messages:", err);
