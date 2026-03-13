@@ -141,7 +141,7 @@ export default function ConversationList({
                                 </p>
                                 {/* Unread badge */}
                                 {hasUnread && (
-                                    <span className="ml-1 shrink-0 min-w-[18px] h-[18px] bg-orange-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center px-1">
+                                    <span className="ml-1 shrink-0 min-w-[20px] h-[20px] bg-orange-600 text-white text-[10px] font-black rounded-full flex items-center justify-center px-1 shadow-sm ring-2 ring-white dark:ring-gray-900 animate-in zoom-in">
                                         {conv.unreadCount > 99 ? '99+' : conv.unreadCount}
                                     </span>
                                 )}

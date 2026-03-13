@@ -51,17 +51,6 @@ export default function AdminLayout() {
         return location.pathname.startsWith(path);
     };
 
-    const getPageTitle = () => {
-        const path = location.pathname;
-        if (path.startsWith('/admin/dashboard')) return 'Bảng điều khiển';
-        if (path.startsWith('/admin/stores/')) return 'Chi tiết cửa hàng';
-        if (path.startsWith('/admin/stores')) return 'Quản lý cửa hàng';
-        if (path.startsWith('/admin/categories')) return 'Quản lý loại thực phẩm';
-        if (path.startsWith('/admin/vouchers')) return 'Quản lý voucher';
-        if (path.startsWith('/admin/transactions')) return 'Lịch sử giao dịch';
-        if (path.startsWith('/admin/withdrawals')) return 'Rút tiền Manager';
-        return 'Food Delivery Admin';
-    };
 
     const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
 
@@ -174,12 +163,6 @@ export default function AdminLayout() {
                 </div>
             </header>
 
-            {/* Desktop Page Title Header (Sticky) */}
-            <header className="hidden md:flex sticky top-0 md:pl-20 lg:pl-64 h-16 bg-white/5 backdrop-blur-sm border-b border-orange-100/30 z-[40] items-center px-8">
-                <h2 className="text-sm font-black text-charcoal uppercase italic tracking-widest">
-                    {getPageTitle()}
-                </h2>
-            </header>
 
             {/* Main Content */}
             <main className="md:pl-20 lg:pl-64 pt-[68px] md:pt-0 min-h-screen">
