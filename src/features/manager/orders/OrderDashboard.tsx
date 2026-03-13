@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Clock, User, Check, X, Phone, RefreshCw, MapPin, Eye, Receipt, CreditCard, StickyNote, ChevronRight, TrendingUp } from 'lucide-react';
+import { Clock, User, Check, X, Phone, RefreshCw, MapPin, CreditCard, StickyNote, TrendingUp } from 'lucide-react';
 import { orderApi, userApi, storeApi } from '../../../api/api';
 import type { OrderDto } from '../../../types/swagger';
 import { OrderStatus, OrderStatusName } from '../../../types/swagger';
@@ -339,7 +339,7 @@ const OrderDashboard = () => {
       {/* DETAIL MODAL */}
       {selectedOrder && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300" onClick={() => setSelectedOrder(null)}>
-          <div className="bg-white dark:bg-charcoal w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden border border-dark-orange/10 flex flex-col max-h-[90vh]" onClick={e => e.stopPropagation()}>
+          <div className="bg-white dark:bg-charcoal w-full max-w-3xl rounded-3xl shadow-2xl overflow-hidden border border-dark-orange/10 flex flex-col max-h-[90vh]" onClick={e => e.stopPropagation()}>
             {/* Modal Header */}
             <div className="p-6 bg-cream/30 dark:bg-gray-800/50 border-b border-dark-orange/10 flex justify-between items-center">
               <div>
@@ -447,7 +447,10 @@ const OrderDashboard = () => {
                                   <div className="w-full h-full flex items-center justify-center text-gray-400">🥘</div>
                                 )}
                               </div>
-                              <p className="font-black text-charcoal dark:text-cream text-sm truncate max-w-[150px]">{item.foodName}</p>
+                              <div className="min-w-0">
+                                <p className="font-black text-charcoal dark:text-cream text-sm uppercase italic tracking-tight">{item.foodName}</p>
+                                <p className="text-[10px] font-bold text-charcoal/40 dark:text-cream/40 uppercase tracking-widest mt-0.5">{item.sizeName || 'Mặc định'}</p>
+                              </div>
                             </div>
                           </td>
                           <td className="px-6 py-4 text-center">
@@ -464,24 +467,24 @@ const OrderDashboard = () => {
                     </tbody>
                     <tfoot className="bg-cream/20 dark:bg-gray-800/30 border-t border-gray-100 dark:border-gray-800">
                       <tr>
-                        <td colSpan={3} className="px-6 py-3 text-right text-[10px] font-black text-charcoal/40 dark:text-cream/40 uppercase tracking-widest">Tạm tính</td>
-                        <td className="px-6 py-3 text-right font-black text-sm text-charcoal dark:text-cream">₫{(selectedOrder.subTotal || 0).toLocaleString('vi-VN')}</td>
+                        <td colSpan={3} className="px-6 py-3 text-right text-[9px] font-black text-charcoal/40 dark:text-cream/40 uppercase tracking-widest">Tạm tính</td>
+                        <td className="px-6 py-3 text-right font-black text-sm text-charcoal dark:text-cream whitespace-nowrap">₫{(selectedOrder.subTotal || 0).toLocaleString('vi-VN')}</td>
                       </tr>
                       {(selectedOrder.deliveryFee || 0) > 0 && (
                         <tr>
-                          <td colSpan={3} className="px-6 py-2 text-right text-[10px] font-black text-emerald-600/80 uppercase tracking-widest">Phí giao hàng</td>
-                          <td className="px-6 py-2 text-right font-bold text-sm text-emerald-600">+₫{selectedOrder.deliveryFee!.toLocaleString('vi-VN')}</td>
+                          <td colSpan={3} className="px-6 py-2 text-right text-[9px] font-black text-emerald-600/80 uppercase tracking-widest">Phí giao hàng</td>
+                          <td className="px-6 py-2 text-right font-bold text-sm text-emerald-600 whitespace-nowrap">+₫{selectedOrder.deliveryFee!.toLocaleString('vi-VN')}</td>
                         </tr>
                       )}
                       {(selectedOrder.discount || 0) > 0 && (
                         <tr>
-                          <td colSpan={3} className="px-6 py-2 text-right text-[10px] font-black text-rose-500/80 uppercase tracking-widest">Giảm giá</td>
-                          <td className="px-6 py-2 text-right font-bold text-sm text-rose-500">-₫{selectedOrder.discount!.toLocaleString('vi-VN')}</td>
+                          <td colSpan={3} className="px-6 py-2 text-right text-[9px] font-black text-rose-500/80 uppercase tracking-widest">Giảm giá</td>
+                          <td className="px-6 py-2 text-right font-bold text-sm text-rose-500 whitespace-nowrap">-₫{selectedOrder.discount!.toLocaleString('vi-VN')}</td>
                         </tr>
                       )}
                       <tr className="bg-dark-orange/5">
-                        <td colSpan={3} className="px-6 py-6 text-right text-sm font-black text-dark-orange uppercase tracking-widest">Tổng cộng</td>
-                        <td className="px-6 py-6 text-right font-black text-3xl text-dark-orange">
+                        <td colSpan={2} className="px-6 py-6 text-right text-sm font-black text-dark-orange uppercase tracking-widest">Tổng cộng hoá đơn</td>
+                        <td colSpan={2} className="px-6 py-6 text-right font-black text-4xl text-dark-orange whitespace-nowrap">
                           ₫{(selectedOrder.total || 0).toLocaleString('vi-VN')}
                         </td>
                       </tr>

@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { ArrowLeft, MapPin, Star, Heart, Clock, Plus, ShoppingCart } from 'lucide-react';
-import { storeApi, foodStoreApi, favoriteApi, reviewApi } from '../../../api/api';
+import { ArrowLeft, MapPin, Star, Clock, Plus, ShoppingCart } from 'lucide-react';
+import { storeApi, foodStoreApi, reviewApi } from '../../../api/api';
 import type { StoreDto, FoodStoreDto } from '../../../types/swagger';
 import { cn } from '../../../lib/utils';
 import { Badge } from '../../../components/ui/Badge';
@@ -18,8 +18,6 @@ export default function StoreDetailPage() {
     const [foods, setFoods] = useState<FoodStoreDto[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const [isFav, setIsFav] = useState(false);
-    const [favFoodIds, setFavFoodIds] = useState<Set<number>>(new Set());
     const [reviews, setReviews] = useState<any[]>([]);
 
     // Cart conflict dialog state
@@ -27,83 +25,39 @@ export default function StoreDetailPage() {
     const [showConflictDialog, setShowConflictDialog] = useState(false);
     const [isAddingToCart, setIsAddingToCart] = useState<string | null>(null); // foodStoreId being added
 
-    useEffect(() => {
-        if (!id) return;
-        favoriteApi.checkStore(Number(id)).then(res => setIsFav(!!res.data)).catch(() => { });
-        
-        // Initial fetch of favorite foods to sync hearts
-        if (authStorage.getToken()) {
-            favoriteApi.getFoods().then(res => {
-                const ids = new Set((res.data as any[] || []).map(f => f.foodId || f.id));
-                setFavFoodIds(ids);
-            }).catch(() => { });
-        }
-    }, [id]);
-
-    const toggleFav = async () => {
-        if (!id) return;
-        try {
-            if (isFav) {
-                await favoriteApi.removeStore(Number(id));
-                setIsFav(false);
-                toast.success('Đã bỏ yêu thích cửa hàng');
-            } else {
-                await favoriteApi.addStore(Number(id));
-                setIsFav(true);
-                toast.success('Đã thêm yêu thích cửa hàng ♥');
-            }
-        } catch { toast.error('Lỗi khi thao tác yêu thích'); }
-    };
-
-    const toggleFoodFav = async (foodId: number, foodName: string) => {
-        if (!authStorage.getToken()) {
-            toast.error('Vui lòng đăng nhập để thực hiện');
-            navigate('/login');
-            return;
-        }
-
-        const isCurrentlyFav = favFoodIds.has(foodId);
-        try {
-            if (isCurrentlyFav) {
-                await favoriteApi.removeFood(foodId);
-                setFavFoodIds(prev => {
-                    const next = new Set(prev);
-                    next.delete(foodId);
-                    return next;
-                });
-                toast.success(`Đã bỏ yêu thích ${foodName}`);
-            } else {
-                await favoriteApi.addFood(foodId);
-                setFavFoodIds(prev => {
-                    const next = new Set(prev);
-                    next.add(foodId);
-                    return next;
-                });
-                toast.success(`Đã thêm yêu thích ${foodName} ♥`);
-            }
-        } catch {
-            toast.error('Lỗi khi thao tác yêu thích món ăn');
-        }
-    };
 
     useEffect(() => {
         const fetchData = async () => {
             if (!id) return;
+            const numericId = Number(id);
+            const isNumeric = !isNaN(numericId);
+            
+            if (!isNumeric && id.length < 5) {
+                console.warn("[StoreDetailPage] Invalid numeric ID format:", id);
+                setError("Mã cửa hàng không hợp lệ.");
+                setIsLoading(false);
+                return;
+            }
+
             try {
                 setIsLoading(true);
+                // Use numeric ID if valid, otherwise use the string ID as is
+                const paramId = isNumeric ? numericId : id;
+                
                 const [storeRes, foodStoreRes] = await Promise.all([
-                    storeApi.getById(Number(id)),
-                    foodStoreApi.getByStore(Number(id)),
+                    storeApi.getById(paramId as any),
+                    foodStoreApi.getByStore(paramId as any),
                 ]);
                 setStore(storeRes.data as any);
                 setFoods(Array.isArray(foodStoreRes.data) ? foodStoreRes.data : []);
-                reviewApi.getByStore(Number(id)).then(r => {
+                
+                reviewApi.getByStore(paramId as any).then(r => {
                     const d = r.data as any;
                     setReviews(Array.isArray(d) ? d : (d?.reviews || d?.Reviews || []));
                 }).catch(() => { });
             } catch (err) {
                 console.error('Failed to fetch store detail:', err);
-                setError('Không thể tải thông tin cửa hàng.');
+                setError('Không thể tải thông tin cửa hàng. Cổng API báo lỗi.');
             } finally {
                 setIsLoading(false);
             }
@@ -186,17 +140,6 @@ export default function StoreDetailPage() {
                         </div>
 
                         <div className="flex items-center gap-2">
-                            <button
-                                onClick={toggleFav}
-                                className={cn(
-                                    "p-2 rounded-full transition-all border",
-                                    isFav
-                                        ? "bg-red-50 text-red-500 border-red-100"
-                                        : "hover:bg-gray-100 text-gray-600 border-transparent"
-                                )}
-                            >
-                                <Heart className={cn("w-5 h-5", isFav && "fill-current")} />
-                            </button>
                             <Link to="/cart" className="p-2 hover:bg-gray-100 rounded-full text-gray-600 transition-colors border border-transparent">
                                 <ShoppingCart className="w-5 h-5" />
                             </Link>
@@ -267,7 +210,7 @@ export default function StoreDetailPage() {
                                 <div className="w-10 h-10 bg-blue-400/10 rounded-xl flex items-center justify-center mx-auto mb-2">
                                     <MapPin className="w-5 h-5 text-blue-600" />
                                 </div>
-                                <p className="text-[10px] font-black text-gray-900 leading-tight uppercase italic truncate px-2">Grab Food</p>
+                                <p className="text-[10px] font-black text-gray-900 leading-tight uppercase italic truncate px-2">Food Delivery</p>
                                 <p className="text-[9px] text-gray-400 font-bold uppercase tracking-widest">Giao hàng</p>
                             </div>
                         </div>
@@ -304,23 +247,6 @@ export default function StoreDetailPage() {
 
                                             {/* Info */}
                                             <div className="flex-1 min-w-0 flex flex-col pt-1 relative">
-                                                {!isAdmin && (
-                                                    <button
-                                                        onClick={(e) => {
-                                                            e.preventDefault();
-                                                            e.stopPropagation();
-                                                            if (item.food?.id) toggleFoodFav(item.food.id, item.food.name || 'Món ăn');
-                                                        }}
-                                                        className={cn(
-                                                            "absolute top-0 right-0 p-1.5 rounded-full transition-all",
-                                                            item.food?.id && favFoodIds.has(item.food.id)
-                                                                ? "text-red-500 bg-red-50"
-                                                                : "text-gray-300 hover:text-gray-400 hover:bg-gray-100"
-                                                        )}
-                                                    >
-                                                        <Heart className={cn("w-3.5 h-3.5", item.food?.id && favFoodIds.has(item.food.id) && "fill-current")} />
-                                                    </button>
-                                                )}
 
                                                 <div>
                                                     <Link to={`/product/${item.id}`} state={{ foodStore: item }}>

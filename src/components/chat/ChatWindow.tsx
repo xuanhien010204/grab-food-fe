@@ -56,7 +56,10 @@ function Avatar({ name, size = 8 }: { name?: string; size?: number }) {
 
 function formatGroupTime(msgs: ChatMessageDto[]) {
     const last = msgs[msgs.length - 1];
+    if (!last || !last.sentAt) return '';
     const d = new Date(last.sentAt);
+    if (isNaN(d.getTime())) return '';
+    
     const now = new Date();
     const diff = now.getTime() - d.getTime();
     if (diff < 60_000) return 'Vừa xong';
@@ -186,7 +189,10 @@ export default function ChatWindow({
                                                 {msg.content}
                                                 {/* Timestamp on hover */}
                                                 <span className={`absolute ${group.isMine ? 'right-full mr-2' : 'left-full ml-2'} bottom-1 text-[10px] text-gray-400 whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none`}>
-                                                    {new Date(msg.sentAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
+                                                    {(() => {
+                                                        const date = new Date(msg.sentAt);
+                                                        return isNaN(date.getTime()) ? '' : date.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+                                                    })()}
                                                     {group.isMine && isLast && (
                                                         <span className="ml-1 text-orange-300">{msg.isRead ? '✓✓' : '✓'}</span>
                                                     )}

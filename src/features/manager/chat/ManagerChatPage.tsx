@@ -57,13 +57,46 @@ export default function ManagerChatPage() {
                 }
             }
             
-            // Đảm bảo tin nhắn được sắp xếp theo trình tự thời gian (cũ nhất -> mới nhất)
-            loadedMsgs.sort((a, b) => new Date(a.sentAt).getTime() - new Date(b.sentAt).getTime());
+            const parseDateValue = (d: any) => {
+                if (!d) return null;
+                const date = new Date(d);
+                return isNaN(date.getTime()) ? null : date.getTime();
+            };
+
+            // Detection: Check if the API returns messages in reverse order (newest first)
+            // We'll compare the first and last message timings if they exist
+            const firstDate = parseDateValue(loadedMsgs[0]?.sentAt);
+            const lastDate = parseDateValue(loadedMsgs[loadedMsgs.length - 1]?.sentAt);
             
-            console.log("Loaded messages for manager:", loadedMsgs);
-            setMessages(loadedMsgs);
+            let finalMsgs = [...loadedMsgs];
+            if (firstDate !== null && lastDate !== null && firstDate > lastDate) {
+                console.log("[DEBUG] Detected reversed message order from API, reversing back...");
+                finalMsgs.reverse();
+            } else if (firstDate === null && lastDate === null && loadedMsgs.length > 1) {
+                // If no dates, we assume the API returns them in a specific order. 
+                // Based on user feedback that "xin chao ban" (the response) is on top, 
+                // it means the API is likely newest-first.
+                console.log("[DEBUG] No dates found, assuming newest-first and reversing...");
+                finalMsgs.reverse();
+            }
+            
+            // Final safety sort: ensure ascending time if dates are available
+            finalMsgs.sort((a, b) => {
+                const ta = parseDateValue(a.sentAt);
+                const tb = parseDateValue(b.sentAt);
+                if (ta !== null && tb !== null) return ta - tb;
+                return 0; // Keep relative order otherwise
+            });
+
+            console.log("[DEBUG] Final messages to display:", finalMsgs);
+            setMessages(finalMsgs);
             
             await chatApi.markRead(conv.otherUserId, conv.storeId).catch(() => {});
+            // Dispatch event to update layout badge (Manager side)
+            window.dispatchEvent(new CustomEvent('chatUpdate'));
+            // Also notify CustomerLayout just in case (though they are separate roles, good for testing)
+            window.dispatchEvent(new CustomEvent('chatUnreadUpdate')); 
+            
             loadConversations();
         } catch (err) {
             console.error("Failed to load messages:", err);

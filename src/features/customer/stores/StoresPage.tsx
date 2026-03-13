@@ -1,10 +1,9 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Search, MapPin, Star, Clock, ArrowLeft, Store, Heart } from 'lucide-react';
-import { storeApi, favoriteApi } from '../../../api/api';
+import { Search, MapPin, Star, Clock, ArrowLeft, Store } from 'lucide-react';
+import { storeApi } from '../../../api/api';
 import type { StoreDto } from '../../../types/swagger';
 import { Badge } from '../../../components/ui/Badge';
-import { toast } from 'sonner';
 
 export default function StoresPage() {
     const [stores, setStores] = useState<StoreDto[]>([]);
@@ -12,30 +11,6 @@ export default function StoresPage() {
     const [searchQuery, setSearchQuery] = useState('');
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const [favSet, setFavSet] = useState<Set<number>>(new Set());
-
-    useEffect(() => {
-        favoriteApi.getStores().then(res => {
-            const ids = (Array.isArray(res.data) ? res.data : []).map((f: any) => f.storeId || f.store?.id || f.id);
-            setFavSet(new Set(ids));
-        }).catch(() => { });
-    }, []);
-
-    const toggleFav = async (e: React.MouseEvent, storeId: number) => {
-        e.preventDefault();
-        e.stopPropagation();
-        try {
-            if (favSet.has(storeId)) {
-                await favoriteApi.removeStore(storeId);
-                setFavSet(prev => { const n = new Set(prev); n.delete(storeId); return n; });
-                toast.success('Đã bỏ yêu thích');
-            } else {
-                await favoriteApi.addStore(storeId);
-                setFavSet(prev => new Set(prev).add(storeId));
-                toast.success('Đã thêm yêu thích ♥');
-            }
-        } catch { toast.error('Lỗi khi thao tác yêu thích'); }
-    };
 
     useEffect(() => {
         const fetchStores = async () => {
@@ -163,12 +138,6 @@ export default function StoresPage() {
                                         </div>
                                     </div>
                                 </Link>
-                                <button
-                                    onClick={(e) => toggleFav(e, store.id!)}
-                                    className="absolute top-2 right-2 bg-white shadow-sm p-1.5 rounded-full hover:bg-red-50 transition-colors z-10"
-                                >
-                                    <Heart className={`w-4 h-4 ${favSet.has(store.id!) ? 'fill-red-500 text-red-500' : 'text-gray-400'}`} />
-                                </button>
                             </div>
                         ))}
                     </div>

@@ -19,11 +19,20 @@ const UserManagement = () => {
   const fetchUsers = async () => {
     try {
       setLoading(true);
+      console.log('[DEBUG] Fetching users via adminApi.getAllUsers()...');
       const res = await adminApi.getAllUsers();
+      console.log('[DEBUG] User API raw response:', res);
+      
       // Since api.ts auto-unwraps 'result', res.data should be the array
-      setUsers(Array.isArray(res.data) ? res.data : []);
-    } catch (error) {
+      // But if result is still nested, we check for it
+      const userData = (res as any).result || res.data;
+      console.log('[DEBUG] Extracted user data:', userData);
+      
+      setUsers(Array.isArray(userData) ? userData : []);
+    } catch (error: any) {
       console.error('Failed to fetch users:', error);
+      console.error('[DEBUG] Error Response:', error.response?.data);
+      console.error('[DEBUG] Error Status:', error.response?.status);
       toast.error('Không thể tải danh sách người dùng');
     } finally {
       setLoading(false);
@@ -49,13 +58,6 @@ const UserManagement = () => {
 
   const isUserLocked = (user: any): boolean =>
     !!(user.isLocked || user.lockoutEnabled || user.status === 0 || user.isBanned);
-
-  const getStatusBadge = (user: any) => {
-    const base = 'inline-flex items-center px-3 py-1 rounded-full text-xs font-bold';
-    return isUserLocked(user)
-      ? `${base} bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400 border border-red-200 dark:border-red-900/50`
-      : `${base} bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400`;
-  };
 
   const filteredUsers = users.filter((user) => {
     const matchesSearch =

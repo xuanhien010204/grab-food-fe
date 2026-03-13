@@ -67,9 +67,12 @@ const StoreProfile = () => {
               <div className="flex items-center gap-3">
                 {store.isApproved && <div className="bg-emerald-500 text-white p-0.5 rounded-full"><CheckCircle className="w-3.5 h-3.5" /></div>}
                 <p className="text-white/90 text-[10px] font-black uppercase tracking-[0.15em]">
-                  {store.isApproved ? 'Xác minh bởi GrabFood' : 'Đang chờ phê duyệt'} • {store.isOpen ? 'Hoạt động' : 'Tạm nghỉ'}
+                  {store.isApproved ? 'Xác minh bởi Food Delivery' : 'Đang chờ phê duyệt'} • {store.isOpen ? 'Hoạt động' : 'Tạm nghỉ'}
                 </p>
               </div>
+              <p className="text-white/70 text-[10px] font-black uppercase tracking-[0.15em]">
+                Mọi thay đổi sẽ được xét duyệt bởi đội ngũ **Food Delivery** trước khi hiển thị chính thức.
+              </p>
             </div>
           </div>
         </div>

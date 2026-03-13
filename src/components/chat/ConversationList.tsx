@@ -30,6 +30,8 @@ function getAvatarColor(name?: string) {
 function formatTime(iso?: string) {
     if (!iso) return '';
     const d = new Date(iso);
+    if (isNaN(d.getTime())) return '';
+    
     const now = new Date();
     const diff = now.getTime() - d.getTime();
     if (diff < 60_000) return 'Vừa xong';

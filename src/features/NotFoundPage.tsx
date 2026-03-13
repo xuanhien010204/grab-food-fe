@@ -23,8 +23,10 @@ export default function NotFoundPage() {
                     <div className="absolute left-1/2 -bottom-4 -translate-x-1/2 w-24 h-4 bg-black/5 rounded-full blur-md"></div>
                     
                     {/* Floating elements */}
-                    <div className="absolute -top-4 -right-4 w-12 h-12 bg-orange-100 rounded-2xl flex items-center justify-center animate-bounce duration-[3s]">
-                        <span className="text-xl">🍕</span>
+                    <div className="absolute -top-4 -right-4 w-auto h-12 bg-orange-100 rounded-2xl flex items-center justify-center animate-bounce duration-[3s] px-4">
+                        <span className="text-xl font-black text-charcoal tracking-tighter uppercase italic">
+                            Food<span className="text-[#C76E00]"> Delivery</span>
+                        </span>
                     </div>
                     <div className="absolute -bottom-8 -left-4 w-14 h-14 bg-white shadow-xl rounded-2xl flex items-center justify-center animate-bounce duration-[4s] delay-300">
                         <span className="text-2xl">🍔</span>

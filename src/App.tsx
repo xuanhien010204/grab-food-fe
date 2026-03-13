@@ -16,7 +16,6 @@ import StoreDetailPage from './features/customer/stores/StoreDetailPage';
 import FoodsPage from './features/customer/foods/FoodsPage';
 import FoodDetailPage from './features/customer/foods/FoodDetailPage';
 import AddressPage from './features/customer/address/AddressPage';
-import FavoritesPage from './features/customer/favorites/FavoritesPage';
 import MyReviewsPage from './features/customer/reviews/MyReviewsPage';
 import PaymentResultPage from './features/customer/wallet/PaymentResultPage';
 import ManagerRegistrationPage from './features/customer/pages/ManagerRegistrationPage';
@@ -75,7 +74,6 @@ function App() {
           <Route path="foods" element={<FoodsPage />} />
           <Route path="food/:id" element={<FoodDetailPage />} />
           <Route path="addresses" element={<AddressPage />} />
-          <Route path="favorites" element={<FavoritesPage />} />
           <Route path="reviews" element={<MyReviewsPage />} />
           <Route path="register-store" element={<ManagerRegistrationPage />} />
           <Route path="chat" element={<CustomerChatPage />} />
@@ -107,7 +105,8 @@ function App() {
             <Route path="reviews" element={<ManagerReviews />} />
             <Route path="tenants" element={<TenantManagement />} />
             <Route path="store" element={<StoreProfile />} />
-            <Route path="withdrawal" element={<WithdrawalPage />} />
+            <Route path="withdraw" element={<WithdrawalPage />} />
+            <Route path="profile" element={<CustomerProfile />} />
             <Route path="chat" element={<ManagerChatPage />} />
           </Route>
         </Route>

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { 
     ArrowLeft, 
     Clock, 
@@ -15,7 +15,8 @@ import {
     CheckCircle2,
     Truck,
     Package,
-    Store
+    Store,
+    X
 } from 'lucide-react';
 import { orderApi, reviewApi } from '../../../api/api';
 import type { OrderDto } from '../../../types/swagger';
@@ -301,7 +302,7 @@ const OrderDetailPage = () => {
                             <div>
                                 <p className="font-black italic tracking-tight uppercase">{order.paymentMethodName}</p>
                                 <p className={`text-[10px] font-black uppercase tracking-widest mt-1 ${
-                                    order.paymentStatusName.includes('Đã') || order.paymentStatusName.includes('Paid') ? 'text-emerald-400' : 'text-amber-400'
+                                    order.paymentStatusName?.includes('Đã') || order.paymentStatusName?.includes('Paid') ? 'text-emerald-400' : 'text-amber-400'
                                 }`}>
                                     {order.paymentStatusName}
                                 </p>

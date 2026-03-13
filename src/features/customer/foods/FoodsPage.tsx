@@ -166,7 +166,12 @@ export default function FoodsPage() {
                 ) : (
                     <div className="grid grid-cols-2 gap-3">
                         {displayItems.map((item) => (
-                            <Link to={`/product/${item.id}`} key={item.id} className="block group">
+                            <Link 
+                                to={`/product/${item.id}`} 
+                                state={{ foodStore: item }}
+                                key={item.id} 
+                                className="block group"
+                            >
                                 <Card className="overflow-hidden border-none shadow-sm hover:shadow-md transition-shadow h-full">
                                     <div className="relative h-32">
                                         <img
