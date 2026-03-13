@@ -44,7 +44,7 @@ export default function HomePage() {
             setIsLoading(true);
             try {
                 const [vouchersRes, storesRes] = await Promise.allSettled([
-                    voucherApi.getAll(),
+                    (voucherApi as any).getAll({}, { silent: true }),
                     storeApi.getAll()
                 ]);
 
@@ -83,12 +83,13 @@ export default function HomePage() {
     useEffect(() => {
         const fetchByFilter = async () => {
             try {
-                const foodsRes = await foodStoreApi.getAll();
+                const foodsRes = await (foodStoreApi as any).getAll({}, { silent: true });
                 const allFoodStores = foodsRes.data || [];
                 // Filter: Only show food from approved and active stores
-                setFoodStores(allFoodStores.filter(fs => fs.store?.isApproved && fs.store?.isActive));
+                setFoodStores(allFoodStores.filter((fs: any) => fs.store?.isApproved && fs.store?.isActive));
             } catch (error) {
                 console.error("Failed to fetch food stores", error);
+                setFoodStores([]); // Ensure empty state on error
             }
         };
         fetchByFilter();

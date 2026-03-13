@@ -9,6 +9,8 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
+        // During local development we proxy API requests to the local backend.
+        // Update this if your backend runs on a different host/port.
         target: 'http://grab-food.somee.com',
         changeOrigin: true,
         secure: false,

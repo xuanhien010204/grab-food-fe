@@ -21,7 +21,29 @@ function read(): CartOrderList {
     try {
         const raw = localStorage.getItem(CART_KEY);
         if (!raw) return {};
-        return JSON.parse(raw) as CartOrderList;
+        const data = JSON.parse(raw) as CartOrderList;
+        
+        // Self-healing: Remove entries with numeric keys (should be GUIDs)
+        let healed = false;
+        const keys = Object.keys(data);
+        for (const key of keys) {
+            if (!isNaN(Number(key)) && key.length < 5) {
+                console.warn('[cartStore] Removing invalid numeric key:', key);
+                delete data[key];
+                healed = true;
+            } else {
+                // Ensure foodStore object also has a string ID
+                const entry = data[key];
+                if (entry?.foodStore && typeof entry.foodStore.id === 'number') {
+                    console.warn('[cartStore] Healing numeric foodStore.id to string:', entry.foodStore.id);
+                    entry.foodStore.id = String(entry.foodStore.id);
+                    healed = true;
+                }
+            }
+        }
+        if (healed) write(data);
+        
+        return data;
     } catch {
         return {};
     }
@@ -31,12 +53,13 @@ function write(orderList: CartOrderList) {
     localStorage.setItem(CART_KEY, JSON.stringify(orderList));
     const count = Object.values(orderList).reduce((s, e) => s + (e.quantity || 0), 0);
     localStorage.setItem(CART_COUNT_KEY, String(count));
-    window.dispatchEvent(new Event('cartUpdate'));
+    window.dispatchEvent(new CustomEvent('cartUpdate', { detail: { count } }));
 }
 
 /** Try to sync cart to backend (fire-and-forget) */
 function syncToApi(orderList: CartOrderList) {
-    userApi.updateCart({ orderList }).catch((err) => {
+    // Make sync silent so it doesn't annoy the user with toasts if it fails
+    userApi.updateCart({ orderList }, { silent: true } as any).catch((err) => {
         console.warn('[cartStore] API sync failed (non-critical):', err?.message);
     });
 }
@@ -133,7 +156,7 @@ export const cartStore = {
         localStorage.removeItem(CART_KEY);
         localStorage.removeItem(CART_USER_KEY);
         localStorage.setItem(CART_COUNT_KEY, '0');
-        window.dispatchEvent(new Event('cartUpdate'));
+        window.dispatchEvent(new CustomEvent('cartUpdate', { detail: { count: 0 } }));
         userApi.clearCart().catch(() => { });
     },
 

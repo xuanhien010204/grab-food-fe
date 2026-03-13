@@ -1,0 +1,1 @@
+﻿src/features/customer/notifications/NotificationsPage.tsx(83,35): error TS2339: Property 'delete' does not exist on type '{ getAll: (params?: { pageNumber?: number | undefined; pageSize?: number | undefined; } | undefined) => Promise<AxiosResponse<any, any, {}>>; getUnreadCount: () => Promise<...>; markAllRead: () => Promise<...>; markRead: (id: string) => Promise<...>; }'.

@@ -1,188 +1,192 @@
 import { useState, useEffect } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import {
-  LayoutDashboard,
-  Store,
-  Tag,
-  Receipt,
-  Menu,
-  X,
-  Ticket,
-  LogOut
+  ChevronRight,
+  Menu, 
+  X
 } from 'lucide-react';
 import { cn } from '../../../lib/utils';
 import { authStorage } from '../../../utils/auth';
 import { userApi, adminApi } from '../../../api/api';
 
 export default function AdminLayout() {
-  const [isSidebarOpen, setSidebarOpen] = useState(true);
-  const [pendingStoreCount, setPendingStoreCount] = useState(0);
-  const location = useLocation();
-  const navigate = useNavigate();
+    const location = useLocation();
+    const navigate = useNavigate();
+    const [isMenuOpen, setIsMenuOpen] = useState(false);
+    const [pendingStoreCount, setPendingStoreCount] = useState(0);
+    const [pendingWithdrawalCount, setPendingWithdrawalCount] = useState(0);
 
-  const isActive = (path: string) => location.pathname === path;
+    useEffect(() => {
+        adminApi.getPendingStores()
+            .then(res => {
+                const data = Array.isArray(res.data) ? res.data : [];
+                setPendingStoreCount(data.length);
+            })
+            .catch(() => { });
+        
+        try {
+            const reqs = JSON.parse(localStorage.getItem('withdrawal_requests') || '[]');
+            setPendingWithdrawalCount(reqs.filter((r: any) => r.status === 'pending').length);
+        } catch { }
+    }, [location.pathname]);
 
-  useEffect(() => {
-    adminApi.getPendingStores()
-      .then(res => {
-        const data = Array.isArray(res.data) ? res.data : [];
-        setPendingStoreCount(data.length);
-      })
-      .catch(() => { });
-  }, [location.pathname]);
+    const navItems = [
+        { label: 'Bảng điều khiển', to: '/admin/dashboard' },
+        { label: 'Quản lý cửa hàng', to: '/admin/stores', badge: pendingStoreCount },
+        { label: 'Quản lý loại thực phẩm', to: '/admin/categories' },
+        { label: 'Quản lý voucher', to: '/admin/vouchers' },
+        { label: 'Lịch sử giao dịch', to: '/admin/transactions' },
+        { label: 'Rút tiền Manager', to: '/admin/withdrawals', badge: pendingWithdrawalCount },
+    ];
 
-  const handleLogout = async () => {
-    try { await userApi.signOut(); } catch { }
-    authStorage.clear();
-    localStorage.removeItem('bypass_user');
-    navigate('/login', { replace: true });
-  };
+    const handleLogout = async () => {
+        try { await userApi.signOut(); } catch { }
+        authStorage.clear();
+        localStorage.removeItem('bypass_user');
+        navigate('/login', { replace: true });
+    };
 
-  const MENU_ITEMS = [
-    { name: 'Bảng điều khiển', path: '/admin/dashboard', icon: LayoutDashboard },
-    { name: 'Quản lý cửa hàng', path: '/admin/stores', icon: Store, badge: pendingStoreCount },
-    { name: 'Quản lý loại thực phẩm', path: '/admin/categories', icon: Tag },
-    { name: 'Quản lý voucher', path: '/admin/vouchers', icon: Ticket },
-    { name: 'Lịch sử giao dịch', path: '/admin/transactions', icon: Receipt },
-  ];
+    const isActive = (path: string) => {
+        if (path === '/admin') return location.pathname === '/admin/dashboard';
+        return location.pathname.startsWith(path);
+    };
 
-  const getPageTitle = () => {
-    const path = location.pathname;
-    if (path.startsWith('/admin/dashboard')) return 'Bảng điều khiển';
-    if (path.startsWith('/admin/stores/')) return 'Chi tiết cửa hàng';
-    if (path.startsWith('/admin/stores')) return 'Quản lý cửa hàng';
-    if (path.startsWith('/admin/categories')) return 'Quản lý loại thực phẩm';
-    if (path.startsWith('/admin/vouchers')) return 'Quản lý voucher';
-    if (path.startsWith('/admin/transactions')) return 'Lịch sử giao dịch';
-    return '';
-  };
+    const getPageTitle = () => {
+        const path = location.pathname;
+        if (path.startsWith('/admin/dashboard')) return 'Bảng điều khiển';
+        if (path.startsWith('/admin/stores/')) return 'Chi tiết cửa hàng';
+        if (path.startsWith('/admin/stores')) return 'Quản lý cửa hàng';
+        if (path.startsWith('/admin/categories')) return 'Quản lý loại thực phẩm';
+        if (path.startsWith('/admin/vouchers')) return 'Quản lý voucher';
+        if (path.startsWith('/admin/transactions')) return 'Lịch sử giao dịch';
+        if (path.startsWith('/admin/withdrawals')) return 'Rút tiền Manager';
+        return 'Food Delivery Admin';
+    };
 
-  return (
-    <div className="flex min-h-screen bg-[#FFFBF0] font-sans text-charcoal selection:bg-[#C76E00]/30 transition-colors">
+    const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
 
-      {/* SIDEBAR */}
-      <aside
-        className={cn(
-          "w-72 bg-[#C76E00] border-r border-white/10 shadow-xl flex flex-col shrink-0 transition-all duration-300",
-          !isSidebarOpen && "hidden md:flex"
-        )}
-      >
+    return (
+        <div className="min-h-screen bg-[#FDFCFB]">
+            {/* Desktop Sidebar */}
+            <aside className="fixed left-0 top-0 h-screen w-20 lg:w-64 bg-white border-r border-orange-100/50 hidden md:flex flex-col z-50">
+                <div className="p-6 flex items-center gap-3">
+                    {/* ICON REMOVED AS PER USER REQUEST */}
+                    <div>
+                        <span className="text-xl font-black text-charcoal tracking-tighter uppercase italic hidden lg:block leading-none">
+                            Food<span className="text-[#C76E00]"> Delivery</span>
+                        </span>
+                        <span className="text-[9px] font-black text-[#C76E00]/60 uppercase tracking-[0.2em] hidden lg:block mt-1">
+                            Admin Portal
+                        </span>
+                    </div>
+                </div>
 
-        <div className="p-6 flex flex-col gap-8">
+                <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto custom-scrollbar">
+                    {navItems.map((item) => (
+                        <Link
+                            key={item.to}
+                            to={item.to}
+                            className={cn(
+                                "flex items-center gap-4 px-4 py-3.5 rounded-2xl transition-all duration-300 group relative",
+                                isActive(item.to)
+                                    ? "bg-[#FFF7ED] text-[#C76E00] shadow-sm shadow-orange-100"
+                                    : "text-charcoal/40 hover:bg-orange-50/50 hover:text-charcoal/60"
+                            )}
+                        >
+                            <span className={cn(
+                                "font-bold text-sm hidden lg:block italic uppercase tracking-tight transition-all",
+                                isActive(item.to) ? "translate-x-1" : "group-hover:translate-x-1"
+                            )}>{item.label}</span>
+                            
+                            {item.badge !== undefined && item.badge > 0 && (
+                                <span className="absolute top-2 right-2 lg:right-4 w-5 h-5 bg-[#C76E00] text-white text-[10px] font-black rounded-full flex items-center justify-center border-2 border-white lg:static lg:ml-auto">
+                                    {item.badge}
+                                </span>
+                            )}
 
-          {/* Logo */}
-          <div className="flex items-center gap-3">
-            <div className="bg-white/10 rounded-xl p-2 flex items-center justify-center border border-white/20 backdrop-blur-md">
-              <span className="text-white text-2xl">🍜</span>
-            </div>
-            <div>
-              <h1 className="text-xl font-black tracking-tight text-white uppercase italic leading-none">FoodDelivery</h1>
-              <p className="text-[9px] font-bold text-white/80 mt-1 uppercase tracking-[0.2em]">
-                Admin Portal
-              </p>
-            </div>
-          </div>
+                            {isActive(item.to) && (
+                                <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-[#C76E00] rounded-r-full hidden lg:block" />
+                            )}
+                        </Link>
+                    ))}
+                </nav>
 
-          {/* Menu */}
-          <nav className="flex flex-col gap-2">
+                <div className="p-4 border-t border-orange-100/30">
+                    <button
+                        onClick={handleLogout}
+                        className="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-rose-500 bg-rose-50 hover:bg-rose-100 border border-rose-100 rounded-xl font-bold text-sm transition-all active:scale-[0.98] uppercase tracking-wider"
+                    >
+                        Đăng xuất
+                    </button>
+                </div>
+            </aside>
 
-            {MENU_ITEMS.map((item) => {
-              const Icon = item.icon;
+            {/* Mobile Header */}
+            <header className="md:hidden fixed top-0 w-full bg-white/80 backdrop-blur-md border-b border-orange-100/50 z-50 transition-all duration-300">
+                <div className="flex items-center justify-between px-6 py-4">
+                        <span className="text-lg font-black text-charcoal tracking-tighter uppercase italic">
+                            Food<span className="text-[#C76E00]"> Delivery</span>
+                        </span>
+                    <button 
+                        onClick={toggleMenu}
+                        className="p-2 rounded-xl bg-orange-50 text-[#C76E00]"
+                    >
+                        {isMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+                    </button>
+                </div>
 
-              return (
-                <Link
-                  key={item.path}
-                  to={item.path}
-                  className={cn(
-                    "flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 relative text-sm font-bold",
-                    isActive(item.path)
-                      ? "bg-white text-[#C76E00] shadow-lg scale-[1.02]"
-                      : "text-white/70 hover:bg-white/10 hover:text-white"
-                  )}
-                >
-                  <Icon className="w-5 h-5" />
+                {/* Mobile Menu Overlay */}
+                <div className={cn(
+                    "fixed inset-0 top-[68px] bg-white transition-all duration-500 ease-in-out md:hidden z-50",
+                    isMenuOpen ? "translate-x-0 opacity-100" : "translate-x-full opacity-0"
+                )}>
+                    <nav className="p-6 space-y-4">
+                        {navItems.map((item) => (
+                            <Link
+                                key={item.to}
+                                to={item.to}
+                                onClick={() => setIsMenuOpen(false)}
+                                className={cn(
+                                    "flex items-center justify-between p-4 rounded-2xl transition-all",
+                                    isActive(item.to)
+                                        ? "bg-[#FFF7ED] text-[#C76E00]"
+                                        : "text-charcoal/40 hover:bg-orange-50/50"
+                                )}
+                            >
+                                <span className="font-black uppercase tracking-widest text-sm italic">{item.label}</span>
+                                <div className="flex items-center gap-3">
+                                    {item.badge !== undefined && item.badge > 0 && (
+                                        <span className="px-2 py-0.5 bg-[#C76E00] text-white text-[10px] font-black rounded-lg">
+                                            {item.badge}
+                                        </span>
+                                    )}
+                                    <ChevronRight className="w-5 h-5 opacity-30" />
+                                </div>
+                            </Link>
+                        ))}
+                        <button
+                        onClick={handleLogout}
+                        className="w-full flex items-center justify-center p-4 rounded-2xl text-rose-500 bg-rose-50 hover:bg-rose-100 border border-rose-100 rounded-xl font-bold text-sm transition-all active:scale-[0.98] uppercase tracking-widest italic"
+                    >
+                        Đăng xuất
+                    </button>
+                    </nav>
+                </div>
+            </header>
 
-                  {item.name}
+            {/* Desktop Page Title Header (Sticky) */}
+            <header className="hidden md:flex sticky top-0 md:pl-20 lg:pl-64 h-16 bg-white/5 backdrop-blur-sm border-b border-orange-100/30 z-[40] items-center px-8">
+                <h2 className="text-sm font-black text-charcoal uppercase italic tracking-widest">
+                    {getPageTitle()}
+                </h2>
+            </header>
 
-                  {(item as any).badge > 0 && (
-                    <span className="ml-auto bg-red-500 text-white text-[10px] font-bold rounded-full min-w-[20px] h-5 flex items-center justify-center px-1">
-                      {(item as any).badge}
-                    </span>
-                  )}
-                </Link>
-              );
-            })}
-
-          </nav>
+            {/* Main Content */}
+            <main className="md:pl-20 lg:pl-64 pt-[68px] md:pt-0 min-h-screen">
+                <div className="max-w-7xl mx-auto p-4 md:p-8 lg:p-12 animate-in fade-in slide-in-from-bottom-4 duration-700">
+                    <Outlet />
+                </div>
+            </main>
         </div>
-
-        {/* Admin Profile */}
-        <div className="mt-auto p-6 border-t border-white/10">
-
-          <div className="flex items-center gap-3 mb-4">
-            <div className="size-10 rounded-full bg-white/10 border border-white/20 flex items-center justify-center text-white font-bold backdrop-blur-md">
-              AD
-            </div>
-
-            <div>
-              <p className="text-sm font-bold text-white">Admin</p>
-              <p className="text-[10px] font-black text-white/60 uppercase tracking-widest">Super Admin</p>
-            </div>
-          </div>
-
-          <button
-            onClick={handleLogout}
-            className="w-full flex items-center gap-2 px-4 py-2.5 text-white bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl font-bold text-sm transition-all active:scale-[0.98]"
-          >
-            <LogOut className="w-4 h-4" />
-            Đăng xuất
-          </button>
-
-        </div>
-
-      </aside>
-
-      {/* MAIN CONTENT */}
-      <main className="flex-1 flex flex-col min-w-0 h-screen overflow-y-auto">
-
-        {/* HEADER */}
-        <header className="h-16 bg-[#C76E00] px-8 flex items-center justify-between sticky top-0 z-50 shadow-lg shrink-0">
-
-          <div className="flex items-center gap-4">
-
-            <button
-              onClick={() => setSidebarOpen(!isSidebarOpen)}
-              className="md:hidden text-white/80 hover:text-white transition-colors"
-            >
-              {isSidebarOpen
-                ? <X className="w-6 h-6" />
-                : <Menu className="w-6 h-6" />
-              }
-            </button>
-
-            <h2 className="text-white font-black uppercase italic tracking-widest text-sm">
-              {getPageTitle()}
-            </h2>
-
-          </div>
-
-        </header>
-
-        {/* PAGE CONTENT */}
-        <div className="p-8 flex-1">
-          <Outlet />
-        </div>
-
-      </main>
-
-      {/* Mobile overlay */}
-      {isSidebarOpen && (
-        <div
-          className="fixed inset-0 z-40 bg-black/40 md:hidden"
-          onClick={() => setSidebarOpen(false)}
-        />
-      )}
-
-    </div>
-  );
+    );
 }

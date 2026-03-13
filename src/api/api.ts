@@ -5,7 +5,8 @@ import type {
     VoucherApplyRequest, DeliveryAddressDto, PaymentResponse,
     WalletResponse, OrderDto, EditProfileRequest, RegisterManagerRequest,
     FoodStoreCreateRequest, FoodStoreUpdateRequest, VoucherCreateRequest, VoucherUpdateRequest,
-    CancelOrderRequest, UpdateOrderStatusRequest, DepositRequest, AddressRequest
+    CancelOrderRequest, UpdateOrderStatusRequest, DepositRequest, AddressRequest,
+    SendMessageRequest
 } from '../types/swagger';
 
 // --- AXIOS INSTANCE ---
@@ -50,6 +51,7 @@ api.interceptors.response.use((response) => {
     let errorMessage = "Đã có lỗi xảy ra. Vui lòng thử lại.";
     const data = error.response?.data;
     const status = error.response?.status;
+    const url = error.config?.url || 'URL unknown';
 
     if (data) {
         // Backend often returns { message: "..." } or { error: "..." } or { errors: { field: ["msg"] } }
@@ -59,8 +61,8 @@ api.interceptors.response.use((response) => {
             const rawMsg = data.message || data.error || data.Message || (typeof data === 'string' ? data : '');
             
             // Filter out technical .NET/Backend exception names
-            if (rawMsg.includes('Exception') || rawMsg.includes('BadRequestException') || rawMsg.includes('was thrown') || rawMsg.includes('unexpected error')) {
-                errorMessage = "Hệ thống đang gặp sự cố hoặc dữ liệu không hợp lệ. Vui lòng thử lại sau.";
+            if (rawMsg.includes('Exception') || rawMsg.includes('BadRequestException') || rawMsg.includes('was thrown') || (rawMsg.includes('unexpected error') && status !== 500)) {
+                errorMessage = `Phản hồi không hợp lệ từ hệ thống (HTTP ${status})`;
             } else if (rawMsg) {
                 errorMessage = rawMsg;
             }
@@ -71,7 +73,7 @@ api.interceptors.response.use((response) => {
             400: "Yêu cầu không hợp lệ. Vui lòng kiểm tra lại.",
             401: "Phiên làm việc hết hạn. Vui lòng đăng nhập lại.",
             403: "Bạn không có quyền thực hiện hành động này.",
-            404: "Nội dung yêu cầu không tồn tại.",
+            404: `Không tìm thấy tài nguyên: ${url}`,
             500: "Lỗi hệ thống từ phía máy chủ.",
             502: "Máy chủ đang bảo trì hoặc gặp sự cố.",
             503: "Dịch vụ hiện không khả dụng."
@@ -82,10 +84,10 @@ api.interceptors.response.use((response) => {
     }
 
     // Show toast for non-silent requests
-    // We can add a custom flag in config to silence specific toasts if needed
     if (!(error.config as any)?.silent) {
         toast.error(errorMessage, {
-            id: `api-error-${error.config?.url}-${status}`, // Prevent duplicate toasts for same request
+            id: `api-error-${url}-${status}`, // Prevent duplicate toasts for same request
+            description: status ? `Cổng: ${url} (Status: ${status})` : `Lỗi: ${url}`,
         });
     }
 
@@ -120,8 +122,8 @@ export const foodApi = {
 };
 
 export const foodStoreApi = {
-    getAll: (params?: { FoodName?: string; FoodTypeId?: number }) =>
-        api.get<FoodStoreDto[]>('/api/food-stores', { params }),
+    getAll: (params?: { FoodName?: string; FoodTypeId?: number }, config?: any) =>
+        api.get<FoodStoreDto[]>('/api/food-stores', { params, ...config }),
     getByStore: (storeId: number) => api.get<FoodStoreDto[]>(`/api/food-stores/store/${storeId}`),
     getMyStore: () => api.get<FoodStoreDto[]>('/api/food-stores/my-store'),
     create: (data: FoodStoreCreateRequest) => api.post('/api/food-stores', data),
@@ -246,7 +248,7 @@ export const userApi = {
     changePassword: (data: { oldPassword: string; newPassword: string }) => api.put('/api/users/change-password', data),
     registerManager: (data: RegisterManagerRequest) => api.post('/api/users/register-manager', data),
     getCart: () => api.get('/api/users/temp-data'),
-    updateCart: (data: any) => api.patch('/api/users/temp-data', data),
+    updateCart: (data: any, config?: any) => api.patch('/api/users/temp-data', data, config),
     clearCart: () => api.delete('/api/users/temp-data'),
     signOut: () => {
         localStorage.removeItem('token');
@@ -275,12 +277,9 @@ export const addressApi = {
 
 export const favoriteApi = {
     getStores: () => api.get('/api/favorites/stores'),
-    addStore: (storeId: number) => api.post(`/api/favorites/stores/${storeId}`),
-    removeStore: (storeId: number) => api.delete(`/api/favorites/stores/${storeId}`),
-    checkStore: (storeId: number) => api.get(`/api/favorites/stores/${storeId}/check`),
 
     getFoods: () => api.get('/api/favorites/foods'),
-    addFood: (foodId: number) => api.post(`/api/favorites/foods/${foodId}`),
+    addFood: (foodId: number) => api.post(`/api/favorites/foods/${foodId}`, {}),
     removeFood: (foodId: number) => api.delete(`/api/favorites/foods/${foodId}`),
     checkFood: (foodId: number) => api.get(`/api/favorites/foods/${foodId}/check`),
 };
@@ -318,8 +317,8 @@ export const tenantApi = {
 };
 
 export const voucherApi = {
-    getAll: (params?: { storeId?: number }) => api.get('/api/vouchers/active', { params }),
-    getActive: (params?: { storeId?: number }) => api.get('/api/vouchers/active', { params }),
+    getAll: (params?: { storeId?: number }, config?: any) => api.get('/api/vouchers/active', { params, ...config }),
+    getActive: (params?: { storeId?: number }, config?: any) => api.get('/api/vouchers/active', { params, ...config }),
     getAvailable: (params?: { orderAmount?: number; storeId?: number }) =>
         api.get('/api/vouchers/available', { params }),
     getByCode: (code: string) => api.get(`/api/vouchers/code/${code}`),
@@ -331,10 +330,37 @@ export const voucherApi = {
 };
 
 export const adminApi = {
+    // Stores Management
     getPendingStores: () => api.get<StoreDto[]>('/api/users/pending-stores'),
     approveStore: (storeId: number) => api.put(`/api/users/approve-store/${storeId}`),
-    lockUser: (userId: number) => api.put(`/api/users/lock/${userId}`),   // fixed missing /
-    getAllUsers: () => api.get<any[]>('/api/users'),
+    lockUser: (userId: number) => api.put(`/api/users/lock/${userId}`),
     getStores: () => api.get<StoreDto[]>('/api/stores'),
     getFoodTypes: () => api.get('/api/food-types'),
+};
+
+export const withdrawalApi = {
+    getMyWithdrawals: (params?: { pageNumber?: number; pageSize?: number }) =>
+        api.get('/api/withdrawals/my-withdrawals', { params }),
+    create: (data: any) => api.post('/api/withdrawals', data),
+};
+
+export const chatApi = {
+    send: (data: SendMessageRequest) => api.post('/api/chat/send', {
+        receiverId: parseInt(data.receiverId as any) || 0,
+        storeId: parseInt(data.storeId as any) || 0,
+        content: String(data.content || '')
+    }),
+    getMessages: (otherUserId: number, storeId: number) =>
+        api.get(`/api/chat/messages/${otherUserId}/${storeId}`),
+    getConversations: () => api.get('/api/chat/conversations'),
+    markRead: (otherUserId: number, storeId: number) =>
+        api.put(`/api/chat/read/${otherUserId}/${storeId}`),
+    getUnreadCount: (config?: any) => api.get('/api/chat/unread-count', config),
+    // Admin → Manager: storeId=0 marks an admin-context message
+    sendToManager: (managerId: number, content: string) =>
+        api.post('/api/chat/send', { 
+            receiverId: parseInt(managerId as any) || 0, 
+            storeId: 0, 
+            content: String(content || '') 
+        }),
 };

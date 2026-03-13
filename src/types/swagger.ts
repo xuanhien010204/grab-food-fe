@@ -547,3 +547,33 @@ export interface CartDto {
     orderList: Record<string, CartItemDto>;
 }
 
+// ============ CHAT ============
+
+export interface SendMessageRequest {
+    receiverId: number;
+    storeId: number;
+    content: string;
+}
+
+export interface ChatMessageDto {
+    id: string;
+    senderId: number;
+    senderName?: string;
+    receiverId: number;
+    receiverName?: string;
+    storeId: number;
+    content: string;
+    isRead: boolean;
+    sentAt: string;
+}
+
+export interface ConversationDto {
+    otherUserId: number;
+    otherUserName?: string;
+    storeId: number;
+    storeName?: string;
+    lastMessage?: string;
+    lastMessageAt?: string;
+    unreadCount: number;
+}
+

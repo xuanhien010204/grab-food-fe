@@ -16,11 +16,11 @@ import StoreDetailPage from './features/customer/stores/StoreDetailPage';
 import FoodsPage from './features/customer/foods/FoodsPage';
 import FoodDetailPage from './features/customer/foods/FoodDetailPage';
 import AddressPage from './features/customer/address/AddressPage';
-import FavoritesPage from './features/customer/favorites/FavoritesPage';
 import MyReviewsPage from './features/customer/reviews/MyReviewsPage';
 import PaymentResultPage from './features/customer/wallet/PaymentResultPage';
 import ManagerRegistrationPage from './features/customer/pages/ManagerRegistrationPage';
 import NotFoundPage from './features/NotFoundPage';
+import CustomerChatPage from './features/customer/chat/CustomerChatPage';
 
 // Admin Imports
 import AdminLayout from './features/admin/layout/AdminLayout';
@@ -41,6 +41,11 @@ import ManagerReviews from './features/manager/reviews/ManagerReviews';
 import TenantManagement from './features/manager/tenants/TenantManagement';
 import RevenueAnalytics from './features/manager/dashboard/RevenueAnalytics';
 import ManagerVouchers from './features/manager/vouchers/ManagerVouchers';
+import WithdrawalPage from './features/manager/withdrawal/WithdrawalPage';
+import ManagerChatPage from './features/manager/chat/ManagerChatPage';
+
+// Admin Extra
+import WithdrawalManagement from './features/admin/withdrawal/WithdrawalManagement';
 
 import ScrollToTop from './components/ScrollToTop';
 
@@ -69,9 +74,9 @@ function App() {
           <Route path="foods" element={<FoodsPage />} />
           <Route path="food/:id" element={<FoodDetailPage />} />
           <Route path="addresses" element={<AddressPage />} />
-          <Route path="favorites" element={<FavoritesPage />} />
           <Route path="reviews" element={<MyReviewsPage />} />
           <Route path="register-store" element={<ManagerRegistrationPage />} />
+          <Route path="chat" element={<CustomerChatPage />} />
         </Route>
 
         {/* Admin Routes */}
@@ -85,6 +90,7 @@ function App() {
             <Route path="vouchers" element={<VoucherManagement />} />
             <Route path="transactions" element={<Transactions />} />
             <Route path="settings" element={<Settings />} />
+            <Route path="withdrawals" element={<WithdrawalManagement />} />
           </Route>
         </Route>
 
@@ -99,6 +105,9 @@ function App() {
             <Route path="reviews" element={<ManagerReviews />} />
             <Route path="tenants" element={<TenantManagement />} />
             <Route path="store" element={<StoreProfile />} />
+            <Route path="withdraw" element={<WithdrawalPage />} />
+            <Route path="profile" element={<CustomerProfile />} />
+            <Route path="chat" element={<ManagerChatPage />} />
           </Route>
         </Route>
 
